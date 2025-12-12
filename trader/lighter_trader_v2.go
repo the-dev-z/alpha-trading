@@ -73,22 +73,32 @@ type LighterTraderV2 struct {
 
 // NewLighterTraderV2 Create new LIGHTER trader (using official SDK)
 // Parameters:
-//   - l1PrivateKeyHex: L1 wallet private key (32 bytes, standard Ethereum private key)
-//   - walletAddr: Ethereum wallet address (optional, will be derived from private key if empty)
-//   - apiKeyPrivateKeyHex: API Key private key (40 bytes, for signing transactions) - needs generation if empty
+//   - l1PrivateKeyHex: L1 wallet private key (32 bytes, optional - only needed for GenerateAndRegisterAPIKey)
+//   - walletAddr: Ethereum wallet address (required if l1PrivateKeyHex is empty)
+//   - apiKeyPrivateKeyHex: API Key private key (40 bytes, for signing transactions) - required
 //   - testnet: Whether to use testnet
 func NewLighterTraderV2(l1PrivateKeyHex, walletAddr, apiKeyPrivateKeyHex string, testnet bool) (*LighterTraderV2, error) {
-	// 1. Parse L1 private key
-	l1PrivateKeyHex = strings.TrimPrefix(strings.ToLower(l1PrivateKeyHex), "0x")
-	l1PrivateKey, err := crypto.HexToECDSA(l1PrivateKeyHex)
-	if err != nil {
-		return nil, fmt.Errorf("invalid L1 private key: %w", err)
+	var l1PrivateKey *ecdsa.PrivateKey
+
+	// 1. Parse L1 private key (optional - only needed for GenerateAndRegisterAPIKey)
+	if l1PrivateKeyHex != "" {
+		l1PrivateKeyHex = strings.TrimPrefix(strings.ToLower(l1PrivateKeyHex), "0x")
+		var err error
+		l1PrivateKey, err = crypto.HexToECDSA(l1PrivateKeyHex)
+		if err != nil {
+			return nil, fmt.Errorf("invalid L1 private key: %w", err)
+		}
+
+		// If wallet address not provided, derive from private key
+		if walletAddr == "" {
+			walletAddr = crypto.PubkeyToAddress(*l1PrivateKey.Public().(*ecdsa.PublicKey)).Hex()
+			logger.Infof("✓ Derived wallet address from private key: %s", walletAddr)
+		}
 	}
 
-	// 2. If wallet address not provided, derive from private key
+	// 2. Wallet address is required
 	if walletAddr == "" {
-		walletAddr = crypto.PubkeyToAddress(*l1PrivateKey.Public().(*ecdsa.PublicKey)).Hex()
-		logger.Infof("✓ Derived wallet address from private key: %s", walletAddr)
+		return nil, fmt.Errorf("wallet address is required (either provide directly or via L1 private key)")
 	}
 
 	// 3. Determine API URL and Chain ID
@@ -177,8 +187,8 @@ func (t *LighterTraderV2) initializeAccount() error {
 // getAccountByL1Address Get LIGHTER account info by L1 wallet address
 func (t *LighterTraderV2) getAccountByL1Address() (*AccountInfo, error) {
 	endpoints := []string{
-		fmt.Sprintf("%s/api/v1/account?by=address&value=%s", t.baseURL, t.walletAddr),
-		fmt.Sprintf("%s/api/v1/account/by/l1/%s", t.baseURL, t.walletAddr),
+		fmt.Sprintf("%s/api/v1/account?by=l1_address&value=%s", t.baseURL, t.walletAddr),
+		fmt.Sprintf("%s/api/v1/account/by/l1/%s", t.baseURL, t.walletAddr), // legacy
 	}
 
 	var lastErr error

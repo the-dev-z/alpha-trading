@@ -510,15 +510,15 @@ func (m *PositionSyncManager) createTrader(config *store.TraderFullConfig) (Trad
 		return NewAsterTrader(exchange.AsterUser, exchange.AsterSigner, exchange.AsterPrivateKey)
 
 	case "lighter":
-		if exchange.LighterAPIKeyPrivateKey != "" {
-			return NewLighterTraderV2(
-				exchange.LighterPrivateKey,
-				exchange.LighterWalletAddr,
-				exchange.LighterAPIKeyPrivateKey,
-				exchange.Testnet,
-			)
+		if exchange.LighterAPIKeyPrivateKey == "" {
+			return nil, fmt.Errorf("LIGHTER trading private key not configured. Please add the trading private key (40-byte API Key) in exchange settings")
 		}
-		return NewLighterTrader(exchange.LighterPrivateKey, exchange.LighterWalletAddr, exchange.Testnet)
+		return NewLighterTraderV2(
+			exchange.LighterPrivateKey,
+			exchange.LighterWalletAddr,
+			exchange.LighterAPIKeyPrivateKey,
+			exchange.Testnet,
+		)
 
 	default:
 		return nil, fmt.Errorf("unsupported exchange type: %s", exchange.ExchangeType)

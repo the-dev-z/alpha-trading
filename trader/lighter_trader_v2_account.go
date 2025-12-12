@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 )
@@ -192,17 +193,53 @@ func (t *LighterTraderV2) GetMarketPrice(symbol string) (float64, error) {
 	return price, nil
 }
 
+func (t *LighterTraderV2) getPrecision(symbol string) (SymbolPrecision, error) {
+	t.precisionMutex.RLock()
+	if prec, ok := t.symbolPrecision[symbol]; ok {
+		t.precisionMutex.RUnlock()
+		return prec, nil
+	}
+	t.precisionMutex.RUnlock()
+
+	// Best-effort: reuse the market list endpoint (also fills precision cache when available).
+	if t.client != nil && t.baseURL != "" {
+		_, _ = t.fetchMarketList()
+	}
+
+	t.precisionMutex.RLock()
+	if prec, ok := t.symbolPrecision[symbol]; ok {
+		t.precisionMutex.RUnlock()
+		return prec, nil
+	}
+	t.precisionMutex.RUnlock()
+
+	// Fallback: Lighter base amount ticks are treated as 1e-8.
+	return SymbolPrecision{
+		QuantityPrecision: 8,
+		StepSize:          1.0 / lighterBaseAmountScale,
+	}, nil
+}
+
 // FormatQuantity Format quantity to correct precision (implements Trader interface)
 func (t *LighterTraderV2) FormatQuantity(symbol string, quantity float64) (string, error) {
-	_ = symbol
-
-	// Lighter base amount ticks are currently treated as 1e-8.
-	// Round to the nearest tick to avoid submitting unrepresentable sizes.
 	if quantity == 0 {
 		return "0", nil
 	}
 	if quantity < 0 {
 		return "", fmt.Errorf("invalid quantity: %.8f", quantity)
+	}
+
+	prec, err := t.getPrecision(symbol)
+	if err != nil {
+		return "", err
+	}
+
+	// Prefer step size when available; otherwise fall back to precision.
+	if prec.StepSize > 0 {
+		quantity = roundToTickSize(quantity, prec.StepSize)
+	} else if prec.QuantityPrecision > 0 {
+		multiplier := math.Pow10(prec.QuantityPrecision)
+		quantity = math.Round(quantity*multiplier) / multiplier
 	}
 
 	baseAmount, err := toLighterBaseAmount(quantity)

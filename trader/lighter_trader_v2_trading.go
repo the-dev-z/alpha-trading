@@ -617,6 +617,7 @@ func (t *LighterTraderV2) fetchMarketList() ([]MarketInfo, error) {
 		MarketIDCamel    *int16 `json:"marketId"`
 	}
 
+	var rawMarketList json.RawMessage
 	var rawMarkets []orderBookMarket
 	var apiResp struct {
 		Code    int             `json:"code"`
@@ -642,8 +643,14 @@ func (t *LighterTraderV2) fetchMarketList() ([]MarketInfo, error) {
 				if err3 := json.Unmarshal(raw, &rawMarkets); err3 != nil {
 					return nil, fmt.Errorf("failed to parse market list (%s): %w", key, err3)
 				}
+				rawMarketList = raw
 				break
 			}
+			if rawMarketList == nil {
+				return nil, fmt.Errorf("missing market list in wrapped response: %s", string(body))
+			}
+		} else {
+			rawMarketList = apiResp.Data
 		}
 	} else {
 		// Old format: { data: [...] } or raw array
@@ -659,6 +666,9 @@ func (t *LighterTraderV2) fetchMarketList() ([]MarketInfo, error) {
 			if err3 := json.Unmarshal(raw, &rawMarkets); err3 != nil {
 				return nil, fmt.Errorf("failed to parse market list data: %w", err3)
 			}
+			rawMarketList = raw
+		} else {
+			rawMarketList = body
 		}
 	}
 
@@ -685,8 +695,79 @@ func (t *LighterTraderV2) fetchMarketList() ([]MarketInfo, error) {
 		}
 	}
 
+	t.cacheMarketPrecision(rawMarketList)
+
 	logger.Infof("✓ Retrieved %d markets", len(markets))
 	return markets, nil
+}
+
+func (t *LighterTraderV2) cacheMarketPrecision(rawMarketList json.RawMessage) {
+	if len(rawMarketList) == 0 {
+		return
+	}
+
+	var marketObjs []map[string]interface{}
+	if err := json.Unmarshal(rawMarketList, &marketObjs); err != nil {
+		return
+	}
+
+	t.precisionMutex.Lock()
+	defer t.precisionMutex.Unlock()
+
+	if t.symbolPrecision == nil {
+		t.symbolPrecision = make(map[string]SymbolPrecision)
+	}
+
+	for _, obj := range marketObjs {
+		symbol, ok := obj["symbol"].(string)
+		if !ok || strings.TrimSpace(symbol) == "" {
+			continue
+		}
+
+		pricePrecision, _ := optionalIntFromMap(obj, "price_precision", "pricePrecision")
+		quantityPrecision, _ := optionalIntFromMap(obj, "quantity_precision", "quantityPrecision")
+		tickSize, _ := optionalFloat64FromMap(obj, "tick_size", "tickSize", "price_tick_size", "priceTickSize")
+		stepSize, _ := optionalFloat64FromMap(obj, "step_size", "stepSize", "quantity_step_size", "quantityStepSize")
+
+		prec := SymbolPrecision{
+			PricePrecision:    pricePrecision,
+			QuantityPrecision: quantityPrecision,
+			TickSize:          tickSize,
+			StepSize:          stepSize,
+		}
+
+		// Only cache when we have at least one usable hint.
+		if prec.PricePrecision == 0 && prec.QuantityPrecision == 0 && prec.TickSize <= 0 && prec.StepSize <= 0 {
+			continue
+		}
+		t.symbolPrecision[symbol] = prec
+	}
+}
+
+func optionalIntFromMap(data map[string]interface{}, keys ...string) (int, bool) {
+	for _, key := range keys {
+		if _, ok := data[key]; !ok {
+			continue
+		}
+		v, err := SafeInt(data, key)
+		if err == nil {
+			return v, true
+		}
+	}
+	return 0, false
+}
+
+func optionalFloat64FromMap(data map[string]interface{}, keys ...string) (float64, bool) {
+	for _, key := range keys {
+		if _, ok := data[key]; !ok {
+			continue
+		}
+		v, err := SafeFloat64(data, key)
+		if err == nil {
+			return v, true
+		}
+	}
+	return 0, false
 }
 
 // getFallbackMarketIndex Hardcoded fallback mapping

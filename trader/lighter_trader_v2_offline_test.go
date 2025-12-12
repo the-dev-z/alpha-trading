@@ -234,3 +234,23 @@ func TestLighterTraderV2_GenerateAndRegisterAPIKey_SubmitsChangePubKeyTx(t *test
 	pubKeyBytes := tr.txClient.GetKeyManager().PubKeyBytes()
 	assert.Equal(t, pub, hexutil.Encode(pubKeyBytes[:]))
 }
+
+func TestLighterTraderV2_FormatQuantity_UsesMarketStepSize(t *testing.T) {
+	tr := &LighterTraderV2{
+		baseURL: "https://example.test",
+		client: &http.Client{Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			if r.Method == http.MethodGet && r.URL.Path == "/api/v1/orderBooks" {
+				return jsonResponse(http.StatusOK, `{"data":[{"symbol":"BTC-PERP","market_index":0,"step_size":0.001}]}`), nil
+			}
+			return jsonResponse(http.StatusNotFound, `{"error":"not found"}`), nil
+		})},
+	}
+
+	formatted, err := tr.FormatQuantity("BTC-PERP", 0.0014)
+	assert.NoError(t, err)
+	assert.Equal(t, "0.001", formatted)
+
+	formatted, err = tr.FormatQuantity("BTC-PERP", 0.0016)
+	assert.NoError(t, err)
+	assert.Equal(t, "0.002", formatted)
+}
