@@ -3,10 +3,10 @@
 ## ✅ 已完成功能
 
 ### 1. 核心架構
-- ✅ 集成官方 `lighter-go` SDK (v0.0.0-20251104171447-78b9b55ebc48)
-- ✅ 集成 Poseidon2 Goldilocks 簽名庫 (CGO)
+- ✅ 集成官方 `lighter-go` SDK (v1.0.1)
+- ✅ 集成 Poseidon2 Goldilocks 簽名庫（純 Go，無需 CGO）
 - ✅ 實現雙密鑰系統（L1錢包 + API Key）
-- ✅ V1/V2 自動切換（向後兼容）
+- ✅ V2（SDK）支持完整交易流程（下單/撤單/槓桿/止盈止損）
 
 ### 2. 實現的 Trader 接口方法（17個）
 
@@ -43,7 +43,7 @@
 ### 3. 核心功能
 
 #### 認證與簽名
-- ✅ 自動認證令牌管理（8小時有效期，提前30分鐘刷新）
+- ✅ 自動認證令牌管理（有效期約 7–8 小時，提前 30 分鐘刷新）
 - ✅ 使用 SDK 簽名所有交易（Poseidon2 + Schnorr）
 - ✅ API Key 驗證機制
 
@@ -89,7 +89,7 @@ LIGHTER 使用雙密鑰架構：
 3. 生成 API Key
 4. 保存 API Key 私鑰（40字節）
 
-#### 方式 B：使用 SDK（需要實現）
+#### 方式 B：使用 SDK（已實現）
 ```go
 // 生成新的 API Key
 privateKey, publicKey, err := trader.GenerateAndRegisterAPIKey(seed)
@@ -104,10 +104,7 @@ privateKey, publicKey, err := trader.GenerateAndRegisterAPIKey(seed)
 - **Testnet**: true/false
 
 ### 步驟 4：啟動 Trader
-系統會自動：
-1. 檢測是否有 API Key Private Key
-2. 如果有 → 使用 **LighterTraderV2** (完整功能)
-3. 如果沒有 → 使用 **LighterTrader** (V1，功能受限)
+交易所配置中必須提供 `lighter_api_key_private_key`（40 字節），否則 LIGHTER 將無法初始化交易能力（V1 已停用）。
 
 ---
 
@@ -132,50 +129,12 @@ trader/
 
 | 功能 | V1 (基本實現) | V2 (SDK集成) |
 |------|-------------|-------------|
-| 認證令牌 | ❌ 佔位符 | ✅ 完整實現 |
-| 訂單簽名 | ❌ 無簽名 | ✅ Poseidon2 |
-| 開倉交易 | ⚠️ 模擬 | ✅ 真實交易 |
-| 平倉交易 | ⚠️ 模擬 | ✅ 真實交易 |
-| 止盈止損 | ⚠️ 模擬 | ✅ 真實交易 |
-| CGO 依賴 | ❌ 不需要 | ✅ 需要 |
-
----
-
-## 🔧 CGO 編譯要求
-
-### macOS
-```bash
-# 安裝 Xcode Command Line Tools
-xcode-select --install
-
-# 編譯
-export CGO_ENABLED=1
-go build .
-```
-
-### Linux
-```bash
-# 安裝 gcc
-apt-get install build-essential  # Ubuntu/Debian
-yum install gcc                   # CentOS/RHEL
-
-# 編譯
-export CGO_ENABLED=1
-go build .
-```
-
-### Docker
-```dockerfile
-FROM golang:1.25-alpine
-
-# 安裝 CGO 依賴
-RUN apk add --no-cache gcc musl-dev
-
-# 構建應用
-COPY . /app
-WORKDIR /app
-RUN CGO_ENABLED=1 go build -o nofx .
-```
+| 認證令牌 | ❌ 不支持（已停用） | ✅ 支持 |
+| 訂單簽名 | ❌ 不支持（已停用） | ✅ Poseidon2 + Schnorr |
+| 開/平倉交易 | ❌ 不支持（已停用） | ✅ 支持 |
+| 止盈止損 | ❌ 不支持（已停用） | ✅ 支持（Trigger Orders） |
+| 槓桿/保證金 | ❌ 不支持（已停用） | ✅ 支持 |
+| 依賴 | - | 純 Go（無需 CGO） |
 
 ---
 
@@ -183,48 +142,30 @@ RUN CGO_ENABLED=1 go build -o nofx .
 
 ### ✅ 已完成功能
 
-#### 後端實現（100%）
-1. ✅ **核心 SDK 集成**
-   - 集成 lighter-go SDK (v0.0.0-20251104171447-78b9b55ebc48)
-   - 集成 Poseidon2 Goldilocks 簽名庫 (CGO)
-   - 實現雙密鑰系統（L1 錢包 + API Key）
+#### 後端實現
+1. ✅ **交易功能（V2）**
+   - 下單/撤單（`sendTx`）
+   - 止盈止損（Trigger Orders）
+   - 槓桿與保證金模式（UpdateLeverage）
 
-2. ✅ **完整 HTTP 調用**
-   - `submitOrder()` - POST /api/v1/sendTx (tx_type: 14)
-   - `GetActiveOrders()` - GET /api/v1/accountActiveOrders
-   - `CancelOrder()` - POST /api/v1/sendTx (tx_type: 15)
-   - `getMarketIndex()` - GET /api/v1/orderBooks (動態映射 + 緩存)
+2. ✅ **認證**
+   - 生成/刷新 Auth Token（用於查詢餘額、持倉、掛單等需要授權的 API）
 
-3. ✅ **數據庫遷移**
-   - 新增 `exchanges.lighter_api_key_private_key` 欄位
-   - 遷移腳本: `migrations/002_add_lighter_api_key.sql`
-   - Schema 完整更新
-
-4. ✅ **所有 Trader 接口方法**
-   - 17 個方法全部實現並編譯通過
-   - V1/V2 自動切換機制
+3. ✅ **市場映射**
+   - 動態 `orderBooks` 拉取 market_id / market_index（含欄位名稱兼容）
 
 ### ⏳ 待完成功能
 
-#### 前端實現（0%）
-- 📄 **實現指南**: 詳見 `LIGHTER_FRONTEND_TODO.md`
-- 需要更新的文件：
-  1. `ExchangeConfigModal.tsx` - API Key 輸入字段
-  2. `translations.ts` - 翻譯字符串
-  3. `ExchangesSection.tsx` - API 調用參數
-  4. `api.ts` - 請求接口定義
+#### 待確認（需要對照官方 API/實盤）
+- `sendTx` 是否要求額外的 `account_index` / `api_key_index` 欄位（目前已有自動重試支援）
+- 交易數量/價格的縮放常數是否需要按 market 做精度化（目前以固定 ticks 處理）
+- Spot 市場（market_id >= 2048）目前未在 Trader 交易接口中支持（Perps-only）
 
-- 功能需求：
-  - [ ] API Key 配置界面
-  - [ ] V1/V2 狀態顯示
-  - [ ] 安全輸入支持
-  - [ ] 幫助文本和驗證
-
-### 測試計劃
-1. ✅ 編譯測試（已通過，CGO_ENABLED=1）
-2. ✅ HTTP 調用格式驗證（符合 LIGHTER API 規範）
-3. ⏳ 前端集成測試
-4. ⏳ Testnet 實戰測試
+### 測試
+```bash
+# 僅跑離線單元測試（不需要網路/不需要 httptest 綁定 port）
+go test ./... -run TestLighterTraderV2_ -count=1
+```
 
 ---
 
@@ -252,21 +193,11 @@ ADD COLUMN lighter_api_key_private_key TEXT DEFAULT '';
 
 ## 🐛 已知問題與限制
 
-1. **訂單提交未實現**
-   - `submitOrder()` 暫時返回模擬響應
-   - 需要實現 HTTP POST 到 LIGHTER API
+1. **Spot 市場**
+   - Spot market_id 從 2048 開始；目前交易流程以 Perps 為主，Spot 會被拒絕。
 
-2. **市場索引硬編碼**
-   - `getMarketIndex()` 使用固定映射
-   - 應該從 API 動態獲取
-
-3. **CGO 跨平台編譯**
-   - 需要目標平台的 C 編譯器
-   - Docker 部署更簡單
-
-4. **API Key 生成**
-   - 目前需要手動從官網獲取
-   - 未來可以實現自動生成
+2. **離線環境測試限制**
+   - 部分 trader 測試使用 `httptest.NewServer`，在 sandbox 環境可能因為無法綁定本地 port 而失敗；可用 `-run TestLighterTraderV2_` 跑 Lighter 的離線測試。
 
 ---
 
@@ -281,27 +212,9 @@ ADD COLUMN lighter_api_key_private_key TEXT DEFAULT '';
 
 ## 🎯 總結
 
-✅ **完成度**: 95%
-- 後端核心功能：100%
-- 接口實現：100%
-- HTTP 集成：100% ⭐
-- 數據庫遷移：100% ⭐
-- 前端 UI：0%（詳見 LIGHTER_FRONTEND_TODO.md）
+✅ **完成度**: 後端可編譯 + 離線測試可跑（Lighter V2）
 
-✅ **可用性**: 後端完全可用
-- V1 可用於測試框架
-- V2 完整支持真實交易
-- HTTP 調用已全部實現
-- 數據庫已準備就緒
-- 僅缺前端配置界面
-
-✅ **代碼質量**: 生產級別
-- 完整的錯誤處理
-- 詳細的日誌記錄
-- 清晰的代碼結構
-- 向後兼容性
-- 線程安全的緩存機制
-- 動態市場映射 + 回退機制
+✅ **下一步**: 建議先在 Testnet 用小倉位做一次開倉/平倉/止損止盈/撤單的 smoke test（可參考 `scripts/test_lighter.sh`）。
 
 ---
 

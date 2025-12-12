@@ -20,7 +20,8 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # 測試配置（請根據實際情況修改）
-BACKEND_URL="http://localhost:8081"
+BACKEND_PORT="${NOFX_BACKEND_PORT:-8080}"
+BACKEND_URL="${BACKEND_URL:-http://localhost:${BACKEND_PORT}}"
 TRADER_ID="" # 將在創建後自動填充
 
 # 步驟 1: 檢查容器狀態
@@ -28,7 +29,7 @@ echo "📋 步驟 1: 檢查後端容器狀態"
 if ! docker ps | grep -q nofx-trading; then
     echo -e "${RED}❌ nofx-trading 容器未運行${NC}"
     echo "請先啟動容器："
-    echo "  docker run -d --name nofx-trading -p 8081:8080 nofx-trading:latest"
+    echo "  docker run -d --name nofx-trading -p ${BACKEND_PORT}:8080 nofx-trading:latest"
     exit 1
 else
     echo -e "${GREEN}✅ nofx-trading 容器運行中${NC}"
