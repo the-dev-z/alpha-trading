@@ -44,7 +44,8 @@ interface ExchangeConfigModalProps {
     asterPrivateKey?: string,
     lighterWalletAddr?: string,
     lighterPrivateKey?: string,
-    lighterApiKeyPrivateKey?: string
+    lighterApiKeyPrivateKey?: string,
+    lighterApiKeyIndex?: number
   ) => Promise<void>
   onDelete: (exchangeId: string) => void
   onClose: () => void
@@ -89,6 +90,7 @@ export function ExchangeConfigModal({
   // LIGHTER 特定字段
   const [lighterWalletAddr, setLighterWalletAddr] = useState('')
   const [lighterApiKeyPrivateKey, setLighterApiKeyPrivateKey] = useState('')
+  const [lighterApiKeyIndex, setLighterApiKeyIndex] = useState(2) // Default to first user key (index 2)
 
   // 安全输入状态
   const [secureInputTarget, setSecureInputTarget] = useState<
@@ -149,6 +151,7 @@ export function ExchangeConfigModal({
       // LIGHTER 字段
       setLighterWalletAddr(selectedExchange.lighterWalletAddr || '')
       setLighterApiKeyPrivateKey('') // Don't load existing API key for security
+      setLighterApiKeyIndex(selectedExchange.lighterAPIKeyIndex || 2) // Load API Key Index
     }
   }, [editingExchangeId, selectedExchange])
 
@@ -330,7 +333,8 @@ export function ExchangeConfigModal({
           undefined,
           lighterWalletAddr.trim(),
           '', // L1 private key not required
-          lighterApiKeyPrivateKey.trim()
+          lighterApiKeyPrivateKey.trim(),
+          lighterApiKeyIndex
         )
       } else {
         // 默认情况（其他CEX交易所）
@@ -1139,6 +1143,32 @@ export function ExchangeConfigModal({
                       </div>
                       <div className="text-xs mt-1" style={{ color: '#848E9C' }}>
                         {t('lighterApiKeyPrivateKeyDesc', language)}
+                      </div>
+                    </div>
+
+                    {/* API Key Index */}
+                    <div>
+                      <label
+                        className="block text-sm font-semibold mb-2"
+                        style={{ color: '#EAECEF' }}
+                      >
+                        {t('lighterApiKeyIndex', language)}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="254"
+                        value={lighterApiKeyIndex}
+                        onChange={(e) => setLighterApiKeyIndex(parseInt(e.target.value) || 2)}
+                        className="w-full px-3 py-2 rounded"
+                        style={{
+                          background: '#0B0E11',
+                          border: '1px solid #2B3139',
+                          color: '#EAECEF',
+                        }}
+                      />
+                      <div className="text-xs mt-1" style={{ color: '#848E9C' }}>
+                        {t('lighterApiKeyIndexDesc', language)}
                       </div>
                     </div>
 

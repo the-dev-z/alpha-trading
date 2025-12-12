@@ -455,6 +455,7 @@ type UpdateExchangeConfigRequest struct {
 		LighterWalletAddr       string `json:"lighter_wallet_addr"`
 		LighterPrivateKey       string `json:"lighter_private_key"`
 		LighterAPIKeyPrivateKey string `json:"lighter_api_key_private_key"`
+		LighterAPIKeyIndex      int    `json:"lighter_api_key_index"`
 	} `json:"exchanges"`
 }
 
@@ -596,6 +597,7 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 				exchangeCfg.LighterPrivateKey,
 				exchangeCfg.LighterWalletAddr,
 				exchangeCfg.LighterAPIKeyPrivateKey,
+				exchangeCfg.LighterAPIKeyIndex,
 				exchangeCfg.Testnet,
 			)
 		default:
@@ -1109,6 +1111,7 @@ func (s *Server) handleSyncBalance(c *gin.Context) {
 			exchangeCfg.LighterPrivateKey,
 			exchangeCfg.LighterWalletAddr,
 			exchangeCfg.LighterAPIKeyPrivateKey,
+			exchangeCfg.LighterAPIKeyIndex,
 			exchangeCfg.Testnet,
 		)
 	default:
@@ -1259,6 +1262,7 @@ func (s *Server) handleClosePosition(c *gin.Context) {
 			exchangeCfg.LighterPrivateKey,
 			exchangeCfg.LighterWalletAddr,
 			exchangeCfg.LighterAPIKeyPrivateKey,
+			exchangeCfg.LighterAPIKeyIndex,
 			exchangeCfg.Testnet,
 		)
 	default:
@@ -1528,7 +1532,7 @@ func (s *Server) handleUpdateExchangeConfigs(c *gin.Context) {
 
 	// Update each exchange's configuration
 	for exchangeID, exchangeData := range req.Exchanges {
-		err := s.store.Exchange().Update(userID, exchangeID, exchangeData.Enabled, exchangeData.APIKey, exchangeData.SecretKey, exchangeData.Passphrase, exchangeData.Testnet, exchangeData.HyperliquidWalletAddr, exchangeData.AsterUser, exchangeData.AsterSigner, exchangeData.AsterPrivateKey, exchangeData.LighterWalletAddr, exchangeData.LighterPrivateKey, exchangeData.LighterAPIKeyPrivateKey)
+		err := s.store.Exchange().Update(userID, exchangeID, exchangeData.Enabled, exchangeData.APIKey, exchangeData.SecretKey, exchangeData.Passphrase, exchangeData.Testnet, exchangeData.HyperliquidWalletAddr, exchangeData.AsterUser, exchangeData.AsterSigner, exchangeData.AsterPrivateKey, exchangeData.LighterWalletAddr, exchangeData.LighterPrivateKey, exchangeData.LighterAPIKeyPrivateKey, exchangeData.LighterAPIKeyIndex)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update exchange %s: %v", exchangeID, err)})
 			return
@@ -1562,6 +1566,7 @@ type CreateExchangeRequest struct {
 	LighterWalletAddr       string `json:"lighter_wallet_addr"`
 	LighterPrivateKey       string `json:"lighter_private_key"`
 	LighterAPIKeyPrivateKey string `json:"lighter_api_key_private_key"`
+	LighterAPIKeyIndex      int    `json:"lighter_api_key_index"` // API Key Index (0=desktop, 1=mobile, 2-254=user keys)
 }
 
 // handleCreateExchange Create a new exchange account
@@ -1649,6 +1654,7 @@ func (s *Server) handleCreateExchange(c *gin.Context) {
 		req.APIKey, req.SecretKey, req.Passphrase, req.Testnet,
 		req.HyperliquidWalletAddr, req.AsterUser, req.AsterSigner, req.AsterPrivateKey,
 		req.LighterWalletAddr, req.LighterPrivateKey, req.LighterAPIKeyPrivateKey,
+		req.LighterAPIKeyIndex,
 	)
 	if err != nil {
 		logger.Infof("❌ Failed to create exchange account: %v", err)

@@ -76,8 +76,9 @@ type LighterTraderV2 struct {
 //   - l1PrivateKeyHex: L1 wallet private key (32 bytes, optional - only needed for GenerateAndRegisterAPIKey)
 //   - walletAddr: Ethereum wallet address (required if l1PrivateKeyHex is empty)
 //   - apiKeyPrivateKeyHex: API Key private key (40 bytes, for signing transactions) - required
+//   - apiKeyIndex: API Key index (0=desktop, 1=mobile, 2-254=user keys)
 //   - testnet: Whether to use testnet
-func NewLighterTraderV2(l1PrivateKeyHex, walletAddr, apiKeyPrivateKeyHex string, testnet bool) (*LighterTraderV2, error) {
+func NewLighterTraderV2(l1PrivateKeyHex, walletAddr, apiKeyPrivateKeyHex string, apiKeyIndex int, testnet bool) (*LighterTraderV2, error) {
 	var l1PrivateKey *ecdsa.PrivateKey
 
 	// 1. Parse L1 private key (optional - only needed for GenerateAndRegisterAPIKey)
@@ -122,7 +123,7 @@ func NewLighterTraderV2(l1PrivateKeyHex, walletAddr, apiKeyPrivateKeyHex string,
 		chainID:          chainID,
 		httpClient:       httpClient,
 		apiKeyPrivateKey: apiKeyPrivateKeyHex,
-		apiKeyIndex:      0, // Default to index 0
+		apiKeyIndex:      uint8(apiKeyIndex), // Use the provided API Key Index
 		symbolPrecision:  make(map[string]SymbolPrecision),
 		marketIndexMap:   make(map[string]int16),
 		leverageCache:    make(map[string]int),

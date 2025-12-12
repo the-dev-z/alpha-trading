@@ -517,6 +517,7 @@ func (m *PositionSyncManager) createTrader(config *store.TraderFullConfig) (Trad
 			exchange.LighterPrivateKey,
 			exchange.LighterWalletAddr,
 			exchange.LighterAPIKeyPrivateKey,
+			exchange.LighterAPIKeyIndex,
 			exchange.Testnet,
 		)
 

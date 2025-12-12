@@ -57,6 +57,7 @@ type AutoTraderConfig struct {
 	LighterWalletAddr       string // LIGHTER wallet address (L1 wallet)
 	LighterPrivateKey       string // LIGHTER L1 private key (for account identification)
 	LighterAPIKeyPrivateKey string // LIGHTER API Key private key (40 bytes, for transaction signing)
+	LighterAPIKeyIndex      int    // LIGHTER API Key index (0=desktop, 1=mobile, 2-254=user keys)
 	LighterTestnet          bool   // Whether to use testnet
 
 	// AI configuration
@@ -250,11 +251,12 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 			return nil, fmt.Errorf("LIGHTER trading private key not configured. Please add the trading private key (40-byte API Key) in exchange settings")
 		}
 
-		logger.Infof("✓ [%s] Using LIGHTER SDK with API Key", config.Name)
+		logger.Infof("✓ [%s] Using LIGHTER SDK with API Key (index=%d)", config.Name, config.LighterAPIKeyIndex)
 		trader, err = NewLighterTraderV2(
 			config.LighterPrivateKey,
 			config.LighterWalletAddr,
 			config.LighterAPIKeyPrivateKey,
+			config.LighterAPIKeyIndex,
 			config.LighterTestnet,
 		)
 		if err != nil {
