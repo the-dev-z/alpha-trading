@@ -206,7 +206,7 @@ func (t *LighterTraderV2) CreateOrder(symbol string, isAsk bool, quantity float6
 		return nil, fmt.Errorf("failed to get market index: %w", err)
 	}
 
-	clientOrderIndex := time.Now().UnixMilli()
+	clientOrderIndex := t.nextClientOrderIndex()
 
 	baseAmount, err := toLighterBaseAmount(quantity)
 	if err != nil {
@@ -320,7 +320,7 @@ func (t *LighterTraderV2) createTriggerOrder(symbol string, isAsk bool, quantity
 		return nil, fmt.Errorf("failed to get market index: %w", err)
 	}
 
-	clientOrderIndex := time.Now().UnixMilli()
+	clientOrderIndex := t.nextClientOrderIndex()
 
 	var baseAmount int64
 	if quantity == 0 {
@@ -399,54 +399,134 @@ func (t *LighterTraderV2) submitTx(tx txtypes.TxInfo, priceProtection bool) (map
 		return nil, fmt.Errorf("failed to serialize request: %w", err)
 	}
 
-	// Send POST request to /api/v1/sendTx
 	endpoint := fmt.Sprintf("%s/api/v1/sendTx", t.baseURL)
-	httpReq, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, err
-	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	if err := t.ensureAuthToken(); err == nil {
-		t.accountMutex.RLock()
-		if t.authToken != "" {
-			httpReq.Header.Set("Authorization", t.authToken)
+	send := func(body []byte) ([]byte, int, error) {
+		httpReq, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
+		if err != nil {
+			return nil, 0, err
 		}
-		t.accountMutex.RUnlock()
-	} else {
-		logger.Infof("⚠️  Failed to ensure auth token for sendTx: %v", err)
+
+		httpReq.Header.Set("Content-Type", "application/json")
+		if err := t.ensureAuthToken(); err == nil {
+			t.accountMutex.RLock()
+			if t.authToken != "" {
+				httpReq.Header.Set("Authorization", t.authToken)
+			}
+			t.accountMutex.RUnlock()
+		} else {
+			logger.Infof("⚠️  Failed to ensure auth token for sendTx: %v", err)
+		}
+
+		resp, err := t.client.Do(httpReq)
+		if err != nil {
+			return nil, 0, err
+		}
+		defer resp.Body.Close()
+
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, resp.StatusCode, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return respBody, resp.StatusCode, fmt.Errorf("sendTx http %d: %s", resp.StatusCode, string(respBody))
+		}
+		return respBody, resp.StatusCode, nil
 	}
 
-	resp, err := t.client.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	parse := func(body []byte) (map[string]interface{}, int, string, error) {
+		// New format: { code, message, data }
+		var wrapped SendTxResponse
+		if err := json.Unmarshal(body, &wrapped); err == nil && (wrapped.Code != 0 || wrapped.Message != "" || wrapped.Data != nil) {
+			if wrapped.Code != 200 {
+				return nil, wrapped.Code, wrapped.Message, fmt.Errorf("sendTx failed (code %d): %s", wrapped.Code, wrapped.Message)
+			}
+			return wrapped.Data, wrapped.Code, wrapped.Message, nil
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+		// Legacy format: { success, message, data }
+		var legacy struct {
+			Success bool                   `json:"success"`
+			Message string                 `json:"message"`
+			Data    map[string]interface{} `json:"data"`
+		}
+		if err := json.Unmarshal(body, &legacy); err == nil && (legacy.Success || legacy.Data != nil || legacy.Message != "") {
+			if !legacy.Success {
+				return nil, 0, legacy.Message, fmt.Errorf("sendTx failed: %s", legacy.Message)
+			}
+			return legacy.Data, 200, legacy.Message, nil
+		}
+
+		// Fallback: raw object
+		var raw map[string]interface{}
+		if err := json.Unmarshal(body, &raw); err != nil {
+			return nil, 0, "", fmt.Errorf("failed to parse sendTx response: %w, body: %s", err, string(body))
+		}
+		if data, ok := raw["data"].(map[string]interface{}); ok {
+			return data, 200, "", nil
+		}
+		return raw, 200, "", nil
 	}
 
-	// Parse response
-	var sendResp SendTxResponse
-	if err := json.Unmarshal(body, &sendResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w, body: %s", err, string(body))
+	respBody, _, sendErr := send(reqBody)
+	if sendErr != nil {
+		return nil, sendErr
 	}
 
-	// Check response code
-	if sendResp.Code != 200 {
-		return nil, fmt.Errorf("failed to submit order (code %d): %s", sendResp.Code, sendResp.Message)
+	data, _, msg, parseErr := parse(respBody)
+	if parseErr != nil {
+		// Retry with explicit account/api key indices if the API requires them.
+		bodyStr := string(respBody)
+		if strings.Contains(msg, "account_index") || strings.Contains(msg, "api_key_index") || strings.Contains(bodyStr, "account_index") || strings.Contains(bodyStr, "api_key_index") {
+			t.accountMutex.RLock()
+			accountIndex := t.accountIndex
+			apiKeyIndex := t.apiKeyIndex
+			t.accountMutex.RUnlock()
+
+			type SendTxRequestWithAccount struct {
+				TxType          int    `json:"tx_type"`
+				TxInfo          string `json:"tx_info"`
+				AccountIndex    int64  `json:"account_index"`
+				APIKeyIndex     uint8  `json:"api_key_index"`
+				PriceProtection bool   `json:"price_protection,omitempty"`
+			}
+
+			req2 := SendTxRequestWithAccount{
+				TxType:          req.TxType,
+				TxInfo:          req.TxInfo,
+				AccountIndex:    accountIndex,
+				APIKeyIndex:     apiKeyIndex,
+				PriceProtection: req.PriceProtection,
+			}
+			req2Body, err := json.Marshal(req2)
+			if err == nil {
+				if retryBody, _, retryErr := send(req2Body); retryErr == nil {
+					if retryData, _, _, retryParseErr := parse(retryBody); retryParseErr == nil {
+						data = retryData
+						parseErr = nil
+					} else {
+						parseErr = retryParseErr
+					}
+				} else {
+					parseErr = retryErr
+				}
+			}
+		}
+	}
+	if parseErr != nil {
+		return nil, parseErr
 	}
 
 	// Extract transaction hash and order ID
 	result := map[string]interface{}{
-		"tx_hash": sendResp.Data["tx_hash"],
+		"tx_hash": data["tx_hash"],
 		"status":  "submitted",
 	}
 
 	// Add order ID to result if available
-	if orderID, ok := sendResp.Data["order_id"]; ok {
+	if orderID, ok := data["order_id"]; ok {
+		result["orderId"] = orderID
+	} else if orderID, ok := data["orderId"]; ok {
 		result["orderId"] = orderID
 	}
 
@@ -525,30 +605,66 @@ func (t *LighterTraderV2) fetchMarketList() ([]MarketInfo, error) {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Parse response
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get market list (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	type orderBookMarket struct {
+		Symbol           string `json:"symbol"`
+		MarketIndex      *int16 `json:"market_index"`
+		MarketID         *int16 `json:"market_id"`
+		MarketIndexCamel *int16 `json:"marketIndex"`
+		MarketIDCamel    *int16 `json:"marketId"`
+	}
+
+	var rawMarkets []orderBookMarket
 	var apiResp struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-		Data    []struct {
-			Symbol           string `json:"symbol"`
-			MarketIndex      *int16 `json:"market_index"`
-			MarketID         *int16 `json:"market_id"`
-			MarketIndexCamel *int16 `json:"marketIndex"`
-			MarketIDCamel    *int16 `json:"marketId"`
-		} `json:"data"`
+		Code    int             `json:"code"`
+		Message string          `json:"message"`
+		Data    json.RawMessage `json:"data"`
 	}
 
-	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	if apiResp.Code != 200 {
-		return nil, fmt.Errorf("failed to get market list (code %d): %s", apiResp.Code, apiResp.Message)
+	if err := json.Unmarshal(body, &apiResp); err == nil && apiResp.Data != nil {
+		if apiResp.Code != 0 && apiResp.Code != 200 {
+			return nil, fmt.Errorf("failed to get market list (code %d): %s", apiResp.Code, apiResp.Message)
+		}
+		if err := json.Unmarshal(apiResp.Data, &rawMarkets); err != nil {
+			// Some deployments wrap again: { data: { data: [...] } }
+			var dataObj map[string]json.RawMessage
+			if err2 := json.Unmarshal(apiResp.Data, &dataObj); err2 != nil {
+				return nil, fmt.Errorf("failed to parse market list: %w", err)
+			}
+			for _, key := range []string{"data", "order_books", "orderBooks"} {
+				raw, ok := dataObj[key]
+				if !ok {
+					continue
+				}
+				if err3 := json.Unmarshal(raw, &rawMarkets); err3 != nil {
+					return nil, fmt.Errorf("failed to parse market list (%s): %w", key, err3)
+				}
+				break
+			}
+		}
+	} else {
+		// Old format: { data: [...] } or raw array
+		if err := json.Unmarshal(body, &rawMarkets); err != nil {
+			var dataObj map[string]json.RawMessage
+			if err2 := json.Unmarshal(body, &dataObj); err2 != nil {
+				return nil, fmt.Errorf("failed to parse market list: %w", err)
+			}
+			raw, ok := dataObj["data"]
+			if !ok {
+				return nil, fmt.Errorf("missing data in market list response: %s", string(body))
+			}
+			if err3 := json.Unmarshal(raw, &rawMarkets); err3 != nil {
+				return nil, fmt.Errorf("failed to parse market list data: %w", err3)
+			}
+		}
 	}
 
 	// Convert to MarketInfo list
-	markets := make([]MarketInfo, len(apiResp.Data))
-	for i, market := range apiResp.Data {
+	markets := make([]MarketInfo, len(rawMarkets))
+	for i, market := range rawMarkets {
 		var marketID *int16
 		switch {
 		case market.MarketID != nil:
@@ -720,6 +836,19 @@ func boolToUint8(b bool) uint8 {
 		return 1
 	}
 	return 0
+}
+
+func (t *LighterTraderV2) nextClientOrderIndex() int64 {
+	now := time.Now().UnixMilli()
+
+	t.clientOrderMutex.Lock()
+	if now <= t.lastClientOrderIndex {
+		now = t.lastClientOrderIndex + 1
+	}
+	t.lastClientOrderIndex = now
+	t.clientOrderMutex.Unlock()
+
+	return now
 }
 
 func toLighterBaseAmount(quantity float64) (int64, error) {

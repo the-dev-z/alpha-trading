@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // GetBalance Get account balance (implements Trader interface)
@@ -77,15 +78,15 @@ func (t *LighterTraderV2) GetPositions() ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0, len(positions))
 	for _, pos := range positions {
 		result = append(result, map[string]interface{}{
-			"symbol":             pos.Symbol,
-			"side":               pos.Side,
-			"size":               pos.Size,
-			"entry_price":        pos.EntryPrice,
-			"mark_price":         pos.MarkPrice,
-			"liquidation_price":  pos.LiquidationPrice,
-			"unrealized_pnl":     pos.UnrealizedPnL,
-			"leverage":           pos.Leverage,
-			"margin_used":        pos.MarginUsed,
+			"symbol":            pos.Symbol,
+			"side":              pos.Side,
+			"size":              pos.Size,
+			"entry_price":       pos.EntryPrice,
+			"mark_price":        pos.MarkPrice,
+			"liquidation_price": pos.LiquidationPrice,
+			"unrealized_pnl":    pos.UnrealizedPnL,
+			"leverage":          pos.Leverage,
+			"margin_used":       pos.MarginUsed,
 		})
 	}
 
@@ -193,7 +194,27 @@ func (t *LighterTraderV2) GetMarketPrice(symbol string) (float64, error) {
 
 // FormatQuantity Format quantity to correct precision (implements Trader interface)
 func (t *LighterTraderV2) FormatQuantity(symbol string, quantity float64) (string, error) {
-	// TODO: Get symbol precision from API
-	// Using default precision for now
-	return fmt.Sprintf("%.4f", quantity), nil
+	_ = symbol
+
+	// Lighter base amount ticks are currently treated as 1e-8.
+	// Round to the nearest tick to avoid submitting unrepresentable sizes.
+	if quantity == 0 {
+		return "0", nil
+	}
+	if quantity < 0 {
+		return "", fmt.Errorf("invalid quantity: %.8f", quantity)
+	}
+
+	baseAmount, err := toLighterBaseAmount(quantity)
+	if err != nil {
+		return "", err
+	}
+
+	formatted := fmt.Sprintf("%.8f", float64(baseAmount)/lighterBaseAmountScale)
+	formatted = strings.TrimRight(formatted, "0")
+	formatted = strings.TrimRight(formatted, ".")
+	if formatted == "" {
+		formatted = "0"
+	}
+	return formatted, nil
 }

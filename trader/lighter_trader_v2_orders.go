@@ -332,8 +332,8 @@ func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]LighterActiveOrder, 
 	}
 
 	// Build request URL
-	endpoint := fmt.Sprintf("%s/api/v1/accountActiveOrders?account_index=%d&market_id=%d",
-		t.baseURL, t.accountIndex, marketIndex)
+	endpoint := fmt.Sprintf("%s/api/v1/accountActiveOrders?account_index=%d&market_id=%d&market_index=%d",
+		t.baseURL, t.accountIndex, marketIndex, marketIndex)
 
 	// Send GET request
 	req, err := http.NewRequest("GET", endpoint, nil)
@@ -356,26 +356,31 @@ func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]LighterActiveOrder, 
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Parse response
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get active orders (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	// Parse response (supports both wrapped and unwrapped formats).
+	payload := body
 	var apiResp struct {
 		Code    int             `json:"code"`
 		Message string          `json:"message"`
 		Data    json.RawMessage `json:"data"`
 	}
-
-	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w, body: %s", err, string(body))
-	}
-
-	if apiResp.Code != 200 {
-		return nil, fmt.Errorf("failed to get active orders (code %d): %s", apiResp.Code, apiResp.Message)
+	if err := json.Unmarshal(body, &apiResp); err == nil && (apiResp.Data != nil || apiResp.Code != 0 || apiResp.Message != "") {
+		if apiResp.Code != 0 && apiResp.Code != 200 {
+			return nil, fmt.Errorf("failed to get active orders (code %d): %s", apiResp.Code, apiResp.Message)
+		}
+		if apiResp.Data != nil {
+			payload = apiResp.Data
+		}
 	}
 
 	var rawOrders []map[string]interface{}
-	if err := json.Unmarshal(apiResp.Data, &rawOrders); err != nil {
+	if err := json.Unmarshal(payload, &rawOrders); err != nil {
 		var dataObj map[string]json.RawMessage
-		if err2 := json.Unmarshal(apiResp.Data, &dataObj); err2 != nil {
-			return nil, fmt.Errorf("failed to parse active orders: %w", err)
+		if err2 := json.Unmarshal(payload, &dataObj); err2 != nil {
+			return nil, fmt.Errorf("failed to parse active orders: %w, body: %s", err, string(body))
 		}
 		for _, key := range []string{"orders", "data"} {
 			raw, ok := dataObj[key]
@@ -386,6 +391,9 @@ func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]LighterActiveOrder, 
 				return nil, fmt.Errorf("failed to parse active orders (%s): %w", key, err3)
 			}
 			break
+		}
+		if rawOrders == nil {
+			rawOrders = []map[string]interface{}{}
 		}
 	}
 

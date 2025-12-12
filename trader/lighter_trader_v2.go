@@ -3,6 +3,8 @@ package trader
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/sha512"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +16,7 @@ import (
 
 	lighterClient "github.com/elliottech/lighter-go/client"
 	lighterHTTP "github.com/elliottech/lighter-go/client/http"
+	"github.com/elliottech/lighter-go/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -62,6 +65,10 @@ type LighterTraderV2 struct {
 	settingsMutex   sync.RWMutex
 	leverageCache   map[string]int
 	marginModeCache map[string]uint8
+
+	// Client order index generator (avoid collisions within a millisecond)
+	clientOrderMutex     sync.Mutex
+	lastClientOrderIndex int64
 }
 
 // NewLighterTraderV2 Create new LIGHTER trader (using official SDK)
@@ -169,34 +176,52 @@ func (t *LighterTraderV2) initializeAccount() error {
 
 // getAccountByL1Address Get LIGHTER account info by L1 wallet address
 func (t *LighterTraderV2) getAccountByL1Address() (*AccountInfo, error) {
-	endpoint := fmt.Sprintf("%s/api/v1/account?by=address&value=%s", t.baseURL, t.walletAddr)
-
-	req, err := http.NewRequest("GET", endpoint, nil)
-	if err != nil {
-		return nil, err
+	endpoints := []string{
+		fmt.Sprintf("%s/api/v1/account?by=address&value=%s", t.baseURL, t.walletAddr),
+		fmt.Sprintf("%s/api/v1/account/by/l1/%s", t.baseURL, t.walletAddr),
 	}
 
-	resp, err := t.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	var lastErr error
+	for _, endpoint := range endpoints {
+		req, err := http.NewRequest("GET", endpoint, nil)
+		if err != nil {
+			return nil, err
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+		resp, err := t.client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		body, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if readErr != nil {
+			lastErr = readErr
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			lastErr = fmt.Errorf("status %d: %s", resp.StatusCode, string(body))
+			continue
+		}
+
+		info, err := parseAccountInfo(body)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if info.AccountIndex == 0 {
+			lastErr = fmt.Errorf("missing account_index in response: %s", string(body))
+			continue
+		}
+		return info, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get account (status %d): %s", resp.StatusCode, string(body))
+	if lastErr == nil {
+		lastErr = fmt.Errorf("unknown error")
 	}
-
-	var accountInfo AccountInfo
-	if err := json.Unmarshal(body, &accountInfo); err != nil {
-		return nil, fmt.Errorf("failed to parse account response: %w", err)
-	}
-
-	return &accountInfo, nil
+	return nil, fmt.Errorf("failed to get account: %w", lastErr)
 }
 
 // checkClient Verify if API Key is correct
@@ -228,14 +253,188 @@ func (t *LighterTraderV2) checkClient() error {
 // GenerateAndRegisterAPIKey Generate new API Key and register to LIGHTER
 // Note: This requires L1 private key signature, so must be called with L1 private key available
 func (t *LighterTraderV2) GenerateAndRegisterAPIKey(seed string) (privateKey, publicKey string, err error) {
-	// This function needs to call the official SDK's GenerateAPIKey function
-	// But this is a CGO function in sharedlib, cannot be called directly in pure Go code
-	//
-	// Solutions:
-	// 1. Let users generate API Key from LIGHTER website
-	// 2. Or we can implement a simple API Key generation wrapper
+	if t.privateKey == nil {
+		return "", "", fmt.Errorf("L1 private key not initialized")
+	}
 
-	return "", "", fmt.Errorf("GenerateAndRegisterAPIKey feature not implemented yet, please generate API Key from LIGHTER website")
+	// Ensure we know the account index.
+	if t.accountIndex == 0 {
+		if err := t.initializeAccount(); err != nil {
+			return "", "", fmt.Errorf("failed to initialize account: %w", err)
+		}
+	}
+
+	if t.httpClient == nil {
+		t.httpClient = lighterHTTP.NewClient(t.baseURL)
+	}
+	if t.httpClient == nil {
+		return "", "", fmt.Errorf("http client not initialized")
+	}
+
+	apiKeyBytes, err := generateAPIKeyBytes(seed)
+	if err != nil {
+		return "", "", err
+	}
+	apiKeyHex := hexutil.Encode(apiKeyBytes)
+
+	// Create a temporary TxClient for this new API key.
+	txClient, err := lighterClient.NewTxClient(
+		t.httpClient,
+		apiKeyHex,
+		t.accountIndex,
+		t.apiKeyIndex,
+		t.chainID,
+	)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create TxClient: %w", err)
+	}
+
+	pubKeyBytes := txClient.GetKeyManager().PubKeyBytes()
+	pubKeyHex := hexutil.Encode(pubKeyBytes[:])
+
+	// Sign the ChangePubKey tx (and embed L1 signature) to register this API key on-chain/server-side.
+	nonce := int64(-1) // auto-fetch
+	txInfo, err := txClient.GetChangePubKeyTransaction(&types.ChangePubKeyReq{
+		PubKey: pubKeyBytes,
+	}, &types.TransactOpts{
+		Nonce: &nonce,
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("failed to sign change pubkey tx: %w", err)
+	}
+
+	l1Sig, err := signPersonalMessage(t.privateKey, txInfo.GetL1SignatureBody())
+	if err != nil {
+		return "", "", fmt.Errorf("failed to sign L1 message: %w", err)
+	}
+	txInfo.L1Sig = l1Sig
+
+	if _, err := t.submitTx(txInfo, false); err != nil {
+		return "", "", fmt.Errorf("failed to submit change pubkey tx: %w", err)
+	}
+
+	// Activate this API key locally.
+	t.apiKeyPrivateKey = apiKeyHex
+	t.txClient = txClient
+	_ = t.refreshAuthToken()
+
+	logger.Infof("✓ LIGHTER API key registered (account=%d apiKey=%d)", t.accountIndex, t.apiKeyIndex)
+
+	return apiKeyHex, pubKeyHex, nil
+}
+
+func signPersonalMessage(privateKey *ecdsa.PrivateKey, message string) (string, error) {
+	if privateKey == nil {
+		return "", fmt.Errorf("nil private key")
+	}
+
+	prefix := fmt.Sprintf("\x19Ethereum Signed Message:\n%d", len(message))
+	prefixedMessage := append([]byte(prefix), []byte(message)...)
+
+	hash := crypto.Keccak256Hash(prefixedMessage)
+	signature, err := crypto.Sign(hash.Bytes(), privateKey)
+	if err != nil {
+		return "", err
+	}
+
+	// Adjust v value (Ethereum format)
+	if signature[64] < 27 {
+		signature[64] += 27
+	}
+
+	return hexutil.Encode(signature), nil
+}
+
+func generateAPIKeyBytes(seed string) ([]byte, error) {
+	apiKeyBytes := make([]byte, 40)
+	if strings.TrimSpace(seed) == "" {
+		if _, err := rand.Read(apiKeyBytes); err != nil {
+			return nil, err
+		}
+		return apiKeyBytes, nil
+	}
+
+	sum := sha512.Sum512([]byte(seed))
+	copy(apiKeyBytes, sum[:40])
+	// Avoid the all-zero key.
+	zero := true
+	for _, b := range apiKeyBytes {
+		if b != 0 {
+			zero = false
+			break
+		}
+	}
+	if zero {
+		apiKeyBytes[0] = 1
+	}
+
+	return apiKeyBytes, nil
+}
+
+func parseAccountInfo(body []byte) (*AccountInfo, error) {
+	// 1) Plain object
+	var direct AccountInfo
+	if err := json.Unmarshal(body, &direct); err == nil && direct.AccountIndex != 0 {
+		return &direct, nil
+	}
+
+	// 2) Wrapped object: { code, message, data }
+	var wrapped struct {
+		Code    int             `json:"code"`
+		Message string          `json:"message"`
+		Data    json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(body, &wrapped); err == nil && wrapped.Data != nil {
+		if wrapped.Code != 0 && wrapped.Code != 200 {
+			return nil, fmt.Errorf("api error (code %d): %s", wrapped.Code, wrapped.Message)
+		}
+
+		var inner AccountInfo
+		if err := json.Unmarshal(wrapped.Data, &inner); err == nil && inner.AccountIndex != 0 {
+			return &inner, nil
+		}
+
+		var raw map[string]interface{}
+		if err := json.Unmarshal(wrapped.Data, &raw); err == nil {
+			if idx, ok := getAccountIndexFromMap(raw); ok {
+				return &AccountInfo{AccountIndex: idx}, nil
+			}
+		}
+	}
+
+	// 3) Map fallback (legacy: index)
+	var raw map[string]interface{}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, fmt.Errorf("failed to parse account response: %w", err)
+	}
+	if idx, ok := getAccountIndexFromMap(raw); ok {
+		return &AccountInfo{AccountIndex: idx}, nil
+	}
+
+	return nil, fmt.Errorf("failed to extract account_index from response: %s", string(body))
+}
+
+func getAccountIndexFromMap(raw map[string]interface{}) (int64, bool) {
+	for _, key := range []string{"account_index", "accountIndex", "index"} {
+		v, ok := raw[key]
+		if !ok {
+			continue
+		}
+		switch val := v.(type) {
+		case float64:
+			return int64(val), true
+		case int:
+			return int64(val), true
+		case int64:
+			return val, true
+		case string:
+			var parsed int64
+			if _, err := fmt.Sscanf(val, "%d", &parsed); err == nil {
+				return parsed, true
+			}
+		}
+	}
+	return 0, false
 }
 
 // refreshAuthToken Refresh authentication token (using official SDK)
