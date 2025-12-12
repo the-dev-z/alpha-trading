@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"nofx/logger"
 	"net/http"
+	"nofx/logger"
 	"strings"
 	"sync"
 	"time"
@@ -46,9 +46,9 @@ type LighterTraderV2 struct {
 	accountIndex     int64  // Account index
 
 	// Authentication token
-	authToken     string
-	tokenExpiry   time.Time
-	accountMutex  sync.RWMutex
+	authToken    string
+	tokenExpiry  time.Time
+	accountMutex sync.RWMutex
 
 	// Market info cache
 	symbolPrecision map[string]SymbolPrecision
@@ -57,6 +57,11 @@ type LighterTraderV2 struct {
 	// Market index cache
 	marketIndexMap map[string]int16 // symbol -> market_id
 	marketMutex    sync.RWMutex
+
+	// Runtime settings cache (per-symbol)
+	settingsMutex   sync.RWMutex
+	leverageCache   map[string]int
+	marginModeCache map[string]uint8
 }
 
 // NewLighterTraderV2 Create new LIGHTER trader (using official SDK)
@@ -103,6 +108,8 @@ func NewLighterTraderV2(l1PrivateKeyHex, walletAddr, apiKeyPrivateKeyHex string,
 		apiKeyIndex:      0, // Default to index 0
 		symbolPrecision:  make(map[string]SymbolPrecision),
 		marketIndexMap:   make(map[string]int16),
+		leverageCache:    make(map[string]int),
+		marginModeCache:  make(map[string]uint8),
 	}
 
 	// 5. Initialize account (get account index)

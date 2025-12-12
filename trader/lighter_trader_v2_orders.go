@@ -1,16 +1,62 @@
 package trader
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"nofx/logger"
 	"net/http"
+	"nofx/logger"
 	"strconv"
 
 	"github.com/elliottech/lighter-go/types"
+	"github.com/elliottech/lighter-go/types/txtypes"
 )
+
+type LighterActiveOrder struct {
+	OrderID      string
+	OrderType    int
+	TriggerPrice float64
+	Raw          map[string]interface{}
+}
+
+func getFirstString(m map[string]interface{}, keys ...string) (string, bool) {
+	for _, key := range keys {
+		if _, ok := m[key]; !ok {
+			continue
+		}
+		v, err := SafeString(m, key)
+		if err == nil && v != "" {
+			return v, true
+		}
+	}
+	return "", false
+}
+
+func getFirstFloat64(m map[string]interface{}, keys ...string) (float64, bool) {
+	for _, key := range keys {
+		if _, ok := m[key]; !ok {
+			continue
+		}
+		v, err := SafeFloat64(m, key)
+		if err == nil {
+			return v, true
+		}
+	}
+	return 0, false
+}
+
+func getFirstInt(m map[string]interface{}, keys ...string) (int, bool) {
+	for _, key := range keys {
+		if _, ok := m[key]; !ok {
+			continue
+		}
+		v, err := SafeInt(m, key)
+		if err == nil {
+			return v, true
+		}
+	}
+	return 0, false
+}
 
 // SetStopLoss Set stop-loss order (implements Trader interface)
 func (t *LighterTraderV2) SetStopLoss(symbol string, positionSide string, quantity, stopPrice float64) error {
@@ -23,8 +69,7 @@ func (t *LighterTraderV2) SetStopLoss(symbol string, positionSide string, quanti
 	// Determine order direction (short position uses buy order, long position uses sell order)
 	isAsk := (positionSide == "LONG" || positionSide == "long")
 
-	// Create limit stop-loss order
-	_, err := t.CreateOrder(symbol, isAsk, quantity, stopPrice, "limit")
+	_, err := t.createTriggerOrder(symbol, isAsk, quantity, stopPrice, txtypes.StopLossOrder)
 	if err != nil {
 		return fmt.Errorf("failed to set stop-loss: %w", err)
 	}
@@ -44,8 +89,7 @@ func (t *LighterTraderV2) SetTakeProfit(symbol string, positionSide string, quan
 	// Determine order direction (short position uses buy order, long position uses sell order)
 	isAsk := (positionSide == "LONG" || positionSide == "long")
 
-	// Create limit take-profit order
-	_, err := t.CreateOrder(symbol, isAsk, quantity, takeProfitPrice, "limit")
+	_, err := t.createTriggerOrder(symbol, isAsk, quantity, takeProfitPrice, txtypes.TakeProfitOrder)
 	if err != nil {
 		return fmt.Errorf("failed to set take-profit: %w", err)
 	}
@@ -165,16 +209,72 @@ func (t *LighterTraderV2) GetOrderStatus(symbol string, orderID string) (map[str
 
 // CancelStopLossOrders Cancel only stop-loss orders (implements Trader interface)
 func (t *LighterTraderV2) CancelStopLossOrders(symbol string) error {
-	// LIGHTER cannot distinguish between stop-loss and take-profit orders yet, will cancel all stop orders
-	logger.Infof("⚠️  LIGHTER cannot distinguish stop-loss/take-profit orders, will cancel all stop orders")
-	return t.CancelStopOrders(symbol)
+	orders, err := t.GetActiveOrders(symbol)
+	if err != nil {
+		return err
+	}
+
+	hasType := false
+	for _, order := range orders {
+		if order.OrderType != -1 {
+			hasType = true
+			break
+		}
+	}
+	if !hasType {
+		logger.Infof("⚠️  LIGHTER cannot distinguish stop-loss/take-profit orders (missing order type), will cancel all stop orders")
+		return t.CancelStopOrders(symbol)
+	}
+
+	canceledCount := 0
+	for _, order := range orders {
+		if order.OrderType != int(txtypes.StopLossOrder) && order.OrderType != int(txtypes.StopLossLimitOrder) {
+			continue
+		}
+		if err := t.CancelOrder(symbol, order.OrderID); err != nil {
+			logger.Infof("⚠️  Failed to cancel order (ID: %s): %v", order.OrderID, err)
+		} else {
+			canceledCount++
+		}
+	}
+
+	logger.Infof("✓ LIGHTER - Canceled %d stop-loss orders", canceledCount)
+	return nil
 }
 
 // CancelTakeProfitOrders Cancel only take-profit orders (implements Trader interface)
 func (t *LighterTraderV2) CancelTakeProfitOrders(symbol string) error {
-	// LIGHTER cannot distinguish between stop-loss and take-profit orders yet, will cancel all stop orders
-	logger.Infof("⚠️  LIGHTER cannot distinguish stop-loss/take-profit orders, will cancel all stop orders")
-	return t.CancelStopOrders(symbol)
+	orders, err := t.GetActiveOrders(symbol)
+	if err != nil {
+		return err
+	}
+
+	hasType := false
+	for _, order := range orders {
+		if order.OrderType != -1 {
+			hasType = true
+			break
+		}
+	}
+	if !hasType {
+		logger.Infof("⚠️  LIGHTER cannot distinguish stop-loss/take-profit orders (missing order type), will cancel all stop orders")
+		return t.CancelStopOrders(symbol)
+	}
+
+	canceledCount := 0
+	for _, order := range orders {
+		if order.OrderType != int(txtypes.TakeProfitOrder) && order.OrderType != int(txtypes.TakeProfitLimitOrder) {
+			continue
+		}
+		if err := t.CancelOrder(symbol, order.OrderID); err != nil {
+			logger.Infof("⚠️  Failed to cancel order (ID: %s): %v", order.OrderID, err)
+		} else {
+			canceledCount++
+		}
+	}
+
+	logger.Infof("✓ LIGHTER - Canceled %d take-profit orders", canceledCount)
+	return nil
 }
 
 // CancelStopOrders Cancel stop-loss/take-profit orders for this symbol (implements Trader interface)
@@ -195,8 +295,19 @@ func (t *LighterTraderV2) CancelStopOrders(symbol string) error {
 
 	canceledCount := 0
 	for _, order := range orders {
-		// TODO: Check order type, only cancel stop orders
-		// For now, cancel all orders
+		isStop := order.TriggerPrice > 0
+		if order.OrderType != -1 {
+			switch order.OrderType {
+			case int(txtypes.StopLossOrder), int(txtypes.StopLossLimitOrder), int(txtypes.TakeProfitOrder), int(txtypes.TakeProfitLimitOrder):
+				isStop = true
+			default:
+				isStop = false
+			}
+		}
+		if !isStop {
+			continue
+		}
+
 		if err := t.CancelOrder(symbol, order.OrderID); err != nil {
 			logger.Infof("⚠️  Failed to cancel order (ID: %s): %v", order.OrderID, err)
 		} else {
@@ -209,7 +320,7 @@ func (t *LighterTraderV2) CancelStopOrders(symbol string) error {
 }
 
 // GetActiveOrders Get active orders
-func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]OrderResponse, error) {
+func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]LighterActiveOrder, error) {
 	if err := t.ensureAuthToken(); err != nil {
 		return nil, fmt.Errorf("invalid auth token: %w", err)
 	}
@@ -247,9 +358,9 @@ func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]OrderResponse, error
 
 	// Parse response
 	var apiResp struct {
-		Code    int              `json:"code"`
-		Message string           `json:"message"`
-		Data    []OrderResponse  `json:"data"`
+		Code    int             `json:"code"`
+		Message string          `json:"message"`
+		Data    json.RawMessage `json:"data"`
 	}
 
 	if err := json.Unmarshal(body, &apiResp); err != nil {
@@ -260,8 +371,51 @@ func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]OrderResponse, error
 		return nil, fmt.Errorf("failed to get active orders (code %d): %s", apiResp.Code, apiResp.Message)
 	}
 
-	logger.Infof("✓ LIGHTER - Retrieved %d active orders", len(apiResp.Data))
-	return apiResp.Data, nil
+	var rawOrders []map[string]interface{}
+	if err := json.Unmarshal(apiResp.Data, &rawOrders); err != nil {
+		var dataObj map[string]json.RawMessage
+		if err2 := json.Unmarshal(apiResp.Data, &dataObj); err2 != nil {
+			return nil, fmt.Errorf("failed to parse active orders: %w", err)
+		}
+		for _, key := range []string{"orders", "data"} {
+			raw, ok := dataObj[key]
+			if !ok {
+				continue
+			}
+			if err3 := json.Unmarshal(raw, &rawOrders); err3 != nil {
+				return nil, fmt.Errorf("failed to parse active orders (%s): %w", key, err3)
+			}
+			break
+		}
+	}
+
+	orders := make([]LighterActiveOrder, 0, len(rawOrders))
+	for _, o := range rawOrders {
+		orderID, ok := getFirstString(o, "order_id", "orderId", "id", "index")
+		if !ok || orderID == "" {
+			continue
+		}
+
+		orderType := -1
+		if v, ok := getFirstInt(o, "type", "order_type", "orderType"); ok {
+			orderType = v
+		}
+
+		triggerPrice := 0.0
+		if v, ok := getFirstFloat64(o, "trigger_price", "triggerPrice"); ok {
+			triggerPrice = v
+		}
+
+		orders = append(orders, LighterActiveOrder{
+			OrderID:      orderID,
+			OrderType:    orderType,
+			TriggerPrice: triggerPrice,
+			Raw:          o,
+		})
+	}
+
+	logger.Infof("✓ LIGHTER - Retrieved %d active orders", len(orders))
+	return orders, nil
 }
 
 // CancelOrder Cancel a single order
@@ -271,7 +425,7 @@ func (t *LighterTraderV2) CancelOrder(symbol, orderID string) error {
 	}
 
 	// Get market index
-	marketIndex, err := t.getMarketIndex(symbol)
+	marketIndex, err := t.getSDKMarketIndex(symbol)
 	if err != nil {
 		return fmt.Errorf("failed to get market index: %w", err)
 	}
@@ -297,74 +451,12 @@ func (t *LighterTraderV2) CancelOrder(symbol, orderID string) error {
 		return fmt.Errorf("failed to sign cancel order: %w", err)
 	}
 
-	// Serialize transaction
-	txBytes, err := json.Marshal(tx)
-	if err != nil {
-		return fmt.Errorf("failed to serialize transaction: %w", err)
-	}
-
 	// Submit cancel order to LIGHTER API
-	_, err = t.submitCancelOrder(txBytes)
+	_, err = t.submitTx(tx, false)
 	if err != nil {
 		return fmt.Errorf("failed to submit cancel order: %w", err)
 	}
 
 	logger.Infof("✓ LIGHTER order canceled - ID: %s", orderID)
 	return nil
-}
-
-// submitCancelOrder Submit signed cancel order to LIGHTER API
-func (t *LighterTraderV2) submitCancelOrder(signedTx []byte) (map[string]interface{}, error) {
-	const TX_TYPE_CANCEL_ORDER = 15
-
-	// Build request
-	req := SendTxRequest{
-		TxType:          TX_TYPE_CANCEL_ORDER,
-		TxInfo:          string(signedTx),
-		PriceProtection: false, // Cancel order doesn't need price protection
-	}
-
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize request: %w", err)
-	}
-
-	// Send POST request to /api/v1/sendTx
-	endpoint := fmt.Sprintf("%s/api/v1/sendTx", t.baseURL)
-	httpReq, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, err
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := t.client.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse response
-	var sendResp SendTxResponse
-	if err := json.Unmarshal(body, &sendResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w, body: %s", err, string(body))
-	}
-
-	// Check response code
-	if sendResp.Code != 200 {
-		return nil, fmt.Errorf("failed to submit cancel order (code %d): %s", sendResp.Code, sendResp.Message)
-	}
-
-	result := map[string]interface{}{
-		"tx_hash": sendResp.Data["tx_hash"],
-		"status":  "cancelled",
-	}
-
-	logger.Infof("✓ Cancel order submitted to LIGHTER - tx_hash: %v", sendResp.Data["tx_hash"])
-	return result, nil
 }
