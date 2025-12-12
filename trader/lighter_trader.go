@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"nofx/logger"
 	"net/http"
+	"nofx/logger"
 	"strings"
 	"sync"
 	"time"
@@ -27,11 +27,11 @@ type LighterTrader struct {
 	testnet    bool
 
 	// Account information cache
-	accountIndex  int    // LIGHTER account index
-	apiKey        string // API key (derived from private key)
-	authToken     string // Authentication token (8-hour validity)
-	tokenExpiry   time.Time
-	accountMutex  sync.RWMutex
+	accountIndex int    // LIGHTER account index
+	apiKey       string // API key (derived from private key)
+	authToken    string // Authentication token (8-hour validity)
+	tokenExpiry  time.Time
+	accountMutex sync.RWMutex
 
 	// Market information cache
 	symbolPrecision map[string]SymbolPrecision
@@ -152,18 +152,7 @@ func (t *LighterTrader) getAccountByL1Address() (map[string]interface{}, error) 
 
 // refreshAuthToken Refresh authentication token
 func (t *LighterTrader) refreshAuthToken() error {
-	// TODO: Implement authentication token generation logic
-	// Reference lighter-python SDK implementation
-	// Need to sign specific message and submit to API
-
-	t.accountMutex.Lock()
-	defer t.accountMutex.Unlock()
-
-	// Temporary implementation: set expiry time to 8 hours from now
-	t.tokenExpiry = time.Now().Add(8 * time.Hour)
-	logger.Infof("✓ Auth token generated (valid until: %s)", t.tokenExpiry.Format(time.RFC3339))
-
-	return nil
+	return fmt.Errorf("LIGHTER V1 authentication is not supported; please configure an API key and use LIGHTER V2 (lighter_api_key_private_key)")
 }
 
 // ensureAuthToken Ensure authentication token is valid
@@ -282,17 +271,17 @@ type LighterTradeResponse struct {
 
 // LighterTrade represents a single trade from Lighter
 type LighterTrade struct {
-	TradeID       string `json:"trade_id"`
-	AccountIndex  int64  `json:"account_index"`
-	MarketIndex   int    `json:"market_index"`
-	Symbol        string `json:"symbol"`
-	Side          string `json:"side"` // "buy" or "sell"
-	Price         string `json:"price"`
-	Size          string `json:"size"`
-	RealizedPnl   string `json:"realized_pnl"`
-	Fee           string `json:"fee"`
-	Timestamp     int64  `json:"timestamp"`
-	IsMaker       bool   `json:"is_maker"`
+	TradeID      string `json:"trade_id"`
+	AccountIndex int64  `json:"account_index"`
+	MarketIndex  int    `json:"market_index"`
+	Symbol       string `json:"symbol"`
+	Side         string `json:"side"` // "buy" or "sell"
+	Price        string `json:"price"`
+	Size         string `json:"size"`
+	RealizedPnl  string `json:"realized_pnl"`
+	Fee          string `json:"fee"`
+	Timestamp    int64  `json:"timestamp"`
+	IsMaker      bool   `json:"is_maker"`
 }
 
 // GetTrades retrieves trade history from Lighter
