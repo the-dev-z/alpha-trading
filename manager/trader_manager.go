@@ -624,7 +624,7 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		}
 		logger.Infof("✓ Trader %s loaded strategy config: %s", traderCfg.Name, strategy.Name)
 	} else {
-		return fmt.Errorf("trader %s has no strategy configured", traderCfg.Name)
+		return fmt.Errorf("trader %s: no strategy configured. Please create a strategy in Strategy Studio and associate it with this trader", traderCfg.Name)
 	}
 
 	// Build AutoTraderConfig (coinPoolURL/oiTopURL obtained from strategy config, used in StrategyEngine)
@@ -676,6 +676,7 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 	case "lighter":
 		traderConfig.LighterPrivateKey = exchangeCfg.LighterPrivateKey
 		traderConfig.LighterWalletAddr = exchangeCfg.LighterWalletAddr
+		traderConfig.LighterAPIKeyPrivateKey = exchangeCfg.LighterAPIKeyPrivateKey
 		traderConfig.LighterTestnet = exchangeCfg.Testnet
 	}
 
