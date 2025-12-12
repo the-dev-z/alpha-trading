@@ -373,23 +373,20 @@ export const translations = {
     enterAsterPrivateKey: 'Enter API Pro wallet private key',
 
     // LIGHTER Configuration
-    lighterWalletAddress: 'L1 Wallet Address',
-    lighterPrivateKey: 'L1 Private Key',
-    lighterApiKeyPrivateKey: 'API Key Private Key',
-    enterLighterWalletAddress: 'Enter Ethereum wallet address (0x...)',
-    enterLighterPrivateKey: 'Enter L1 private key (32 bytes)',
-    enterLighterApiKeyPrivateKey: 'Enter API Key private key (40 bytes, optional)',
-    lighterWalletAddressDesc: 'Your Ethereum wallet address for account identification',
-    lighterPrivateKeyDesc: 'L1 private key for account identification (32-byte ECDSA key)',
-    lighterApiKeyPrivateKeyDesc: 'API Key private key for transaction signing (40-byte Poseidon2 key)',
-    lighterApiKeyOptionalNote: 'Without API Key, system will use limited V1 mode',
-    lighterV1Description: 'Basic Mode - Limited functionality, testing framework only',
-    lighterV2Description: 'Full Mode - Supports Poseidon2 signing and real trading',
+    lighterApiWalletTitle: 'Lighter API Wallet Configuration',
+    lighterApiWalletDesc: 'Use API wallet for secure trading: API wallet signs transactions (balance ~0), main wallet holds funds (never expose its private key)',
+    lighterWalletAddress: 'Main Wallet Address',
+    lighterApiKeyPrivateKey: 'Trading Private Key',
+    enterLighterWalletAddress: 'Enter main wallet address (0x...)',
+    enterLighterApiKeyPrivateKey: 'Enter trading private key (40 bytes)',
+    lighterWalletAddressDesc: 'Main wallet address that holds trading funds (never expose its private key)',
+    lighterApiKeyPrivateKeyDesc: 'API wallet has trading permission only, cannot withdraw',
     lighterPrivateKeyImported: 'LIGHTER private key imported',
 
     // Exchange names
     hyperliquidExchangeName: 'Hyperliquid',
     asterExchangeName: 'Aster DEX',
+    lighterExchangeName: 'Lighter',
 
     // Secure input
     secureInputButton: 'Secure Input',
@@ -1454,23 +1451,20 @@ export const translations = {
     enterAsterPrivateKey: '输入 API Pro 代理钱包私钥',
 
     // LIGHTER 配置
-    lighterWalletAddress: 'L1 錢包地址',
-    lighterPrivateKey: 'L1 私鑰',
-    lighterApiKeyPrivateKey: 'API Key 私鑰',
-    enterLighterWalletAddress: '請輸入以太坊錢包地址（0x...）',
-    enterLighterPrivateKey: '請輸入 L1 私鑰（32 字節）',
-    enterLighterApiKeyPrivateKey: '請輸入 API Key 私鑰（40 字節，可選）',
-    lighterWalletAddressDesc: '您的以太坊錢包地址，用於識別賬戶',
-    lighterPrivateKeyDesc: 'L1 私鑰用於賬戶識別（32 字節 ECDSA 私鑰）',
-    lighterApiKeyPrivateKeyDesc: 'API Key 私鑰用於簽名交易（40 字節 Poseidon2 私鑰）',
-    lighterApiKeyOptionalNote: '如果不提供 API Key，系統將使用功能受限的 V1 模式',
-    lighterV1Description: '基本模式 - 功能受限，僅用於測試框架',
-    lighterV2Description: '完整模式 - 支持 Poseidon2 簽名和真實交易',
+    lighterApiWalletTitle: 'Lighter API 錢包配置',
+    lighterApiWalletDesc: '使用 API 錢包安全交易：API 錢包用於簽名（餘額~0），主錢包持有資金（永不暴露私鑰）',
+    lighterWalletAddress: '主錢包地址',
+    lighterApiKeyPrivateKey: '交易私鑰',
+    enterLighterWalletAddress: '輸入主錢包地址（0x...）',
+    enterLighterApiKeyPrivateKey: '輸入交易私鑰（40 字節）',
+    lighterWalletAddressDesc: '持有交易資金的主錢包地址（永不暴露其私鑰）',
+    lighterApiKeyPrivateKeyDesc: 'API 錢包僅有交易權限，無法提現',
     lighterPrivateKeyImported: 'LIGHTER 私鑰已導入',
 
     // Exchange names
     hyperliquidExchangeName: 'Hyperliquid',
     asterExchangeName: 'Aster DEX',
+    lighterExchangeName: 'Lighter',
 
     // Secure input
     secureInputButton: '安全输入',
