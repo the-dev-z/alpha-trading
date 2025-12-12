@@ -55,7 +55,7 @@ type LighterTraderV2 struct {
 	precisionMutex  sync.RWMutex
 
 	// Market index cache
-	marketIndexMap map[string]uint8 // symbol -> market_id
+	marketIndexMap map[string]int16 // symbol -> market_id
 	marketMutex    sync.RWMutex
 }
 
@@ -102,7 +102,7 @@ func NewLighterTraderV2(l1PrivateKeyHex, walletAddr, apiKeyPrivateKeyHex string,
 		apiKeyPrivateKey: apiKeyPrivateKeyHex,
 		apiKeyIndex:      0, // Default to index 0
 		symbolPrecision:  make(map[string]SymbolPrecision),
-		marketIndexMap:   make(map[string]uint8),
+		marketIndexMap:   make(map[string]int16),
 	}
 
 	// 5. Initialize account (get account index)

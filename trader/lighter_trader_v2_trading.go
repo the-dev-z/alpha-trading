@@ -321,7 +321,7 @@ func (t *LighterTraderV2) submitOrder(signedTx []byte) (map[string]interface{}, 
 }
 
 // getMarketIndex Get market index (convert from symbol) - dynamically fetch from API
-func (t *LighterTraderV2) getMarketIndex(symbol string) (uint8, error) {
+func (t *LighterTraderV2) getMarketIndex(symbol string) (int16, error) {
 	// 1. Check cache
 	t.marketMutex.RLock()
 	if index, ok := t.marketIndexMap[symbol]; ok {
@@ -360,7 +360,7 @@ func (t *LighterTraderV2) getMarketIndex(symbol string) (uint8, error) {
 // MarketInfo Market information
 type MarketInfo struct {
 	Symbol   string `json:"symbol"`
-	MarketID uint8  `json:"market_id"`
+	MarketID int16  `json:"market_id"`
 }
 
 // fetchMarketList Fetch market list from API
@@ -391,7 +391,7 @@ func (t *LighterTraderV2) fetchMarketList() ([]MarketInfo, error) {
 		Message string `json:"message"`
 		Data    []struct {
 			Symbol      string `json:"symbol"`
-			MarketIndex uint8  `json:"market_index"`
+			MarketIndex int16  `json:"market_index"`
 		} `json:"data"`
 	}
 
@@ -417,8 +417,8 @@ func (t *LighterTraderV2) fetchMarketList() ([]MarketInfo, error) {
 }
 
 // getFallbackMarketIndex Hardcoded fallback mapping
-func (t *LighterTraderV2) getFallbackMarketIndex(symbol string) (uint8, error) {
-	fallbackMap := map[string]uint8{
+func (t *LighterTraderV2) getFallbackMarketIndex(symbol string) (int16, error) {
+	fallbackMap := map[string]int16{
 		"BTC-PERP":  0,
 		"ETH-PERP":  1,
 		"SOL-PERP":  2,
