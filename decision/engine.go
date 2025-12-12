@@ -719,6 +719,15 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant string
 		sb.WriteString("## Mode: Scalping\n- Focus on short-term momentum, smaller profit targets but require quick action\n- If price doesn't move as expected within two bars, immediately reduce position or stop-loss\n\n")
 	}
 
+	btcEthPosValueRatio := riskControl.BTCETHMaxPositionValueRatio
+	if btcEthPosValueRatio <= 0 {
+		btcEthPosValueRatio = 5.0
+	}
+	altcoinPosValueRatio := riskControl.AltcoinMaxPositionValueRatio
+	if altcoinPosValueRatio <= 0 {
+		altcoinPosValueRatio = 1.0
+	}
+
 	// 3. CRITICAL: Data constraints (prevent AI hallucination)
 	sb.WriteString("# ⚠️ CRITICAL: DATA CONSTRAINTS\n\n")
 	sb.WriteString("**You MUST follow these data rules strictly:**\n\n")
