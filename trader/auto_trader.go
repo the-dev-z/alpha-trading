@@ -245,25 +245,20 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	case "lighter":
 		logger.Infof("🏦 [%s] Using LIGHTER trading", config.Name)
 
-		// Prefer V2 (requires API Key)
-		if config.LighterAPIKeyPrivateKey != "" {
-			logger.Infof("✓ Using LIGHTER SDK (V2) - Full signature support")
-			trader, err = NewLighterTraderV2(
-				config.LighterPrivateKey,
-				config.LighterWalletAddr,
-				config.LighterAPIKeyPrivateKey,
-				config.LighterTestnet,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to initialize LIGHTER trader (V2): %w", err)
-			}
-		} else {
-			// Fallback to V1 (basic HTTP implementation)
-			logger.Infof("⚠️  Using LIGHTER basic implementation (V1) - Limited functionality, please configure API Key")
-			trader, err = NewLighterTrader(config.LighterPrivateKey, config.LighterWalletAddr, config.LighterTestnet)
-			if err != nil {
-				return nil, fmt.Errorf("failed to initialize LIGHTER trader (V1): %w", err)
-			}
+		// Require API Key for LIGHTER (V1 is deprecated)
+		if config.LighterAPIKeyPrivateKey == "" {
+			return nil, fmt.Errorf("LIGHTER trading private key not configured. Please add the trading private key (40-byte API Key) in exchange settings")
+		}
+
+		logger.Infof("✓ [%s] Using LIGHTER SDK with API Key", config.Name)
+		trader, err = NewLighterTraderV2(
+			config.LighterPrivateKey,
+			config.LighterWalletAddr,
+			config.LighterAPIKeyPrivateKey,
+			config.LighterTestnet,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize LIGHTER trader: %w", err)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported trading platform: %s", config.Exchange)
