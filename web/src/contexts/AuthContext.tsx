@@ -183,36 +183,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     betaCode?: string
   ) => {
-    const requestBody: {
-      email: string
-      password: string
-      beta_code?: string
-    } = { email, password }
-    if (betaCode) {
-      requestBody.beta_code = betaCode
-    }
-
-    const result = await httpClient.post<{
-      user_id: string
-      otp_secret: string
-      qr_code_url: string
-      message: string
-    }>('/api/register', requestBody)
-
-    if (result.success && result.data) {
-      return {
-        success: true,
-        userID: result.data.user_id,
-        otpSecret: result.data.otp_secret,
-        qrCodeURL: result.data.qr_code_url,
-        message: result.message || result.data.message,
+    try {
+      const requestBody: {
+        email: string
+        password: string
+        beta_code?: string
+      } = { email, password }
+      if (betaCode) {
+        requestBody.beta_code = betaCode
       }
-    }
 
-    // Only business errors reach here (system/network errors were intercepted)
-    return {
-      success: false,
-      message: result.message || 'Registration failed',
+      const result = await httpClient.post<{
+        user_id: string
+        otp_secret: string
+        qr_code_url: string
+        message: string
+      }>('/api/register', requestBody)
+
+      if (result.success && result.data) {
+        return {
+          success: true,
+          userID: result.data.user_id,
+          otpSecret: result.data.otp_secret,
+          qrCodeURL: result.data.qr_code_url,
+          message: result.message || result.data.message,
+        }
+      }
+
+      // Business errors reach here (4xx except 401/403/404).
+      return {
+        success: false,
+        message: result.message || 'Registration failed',
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Registration failed',
+      }
     }
   }
 

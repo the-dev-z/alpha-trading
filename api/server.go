@@ -588,20 +588,16 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 				exchangeCfg.Passphrase,
 			)
 		case "lighter":
-			if exchangeCfg.LighterAPIKeyPrivateKey != "" {
-				tempTrader, createErr = trader.NewLighterTraderV2(
-					exchangeCfg.LighterPrivateKey,
-					exchangeCfg.LighterWalletAddr,
-					exchangeCfg.LighterAPIKeyPrivateKey,
-					exchangeCfg.Testnet,
-				)
-			} else {
-				tempTrader, createErr = trader.NewLighterTrader(
-					exchangeCfg.LighterPrivateKey,
-					exchangeCfg.LighterWalletAddr,
-					exchangeCfg.Testnet,
-				)
+			if exchangeCfg.LighterAPIKeyPrivateKey == "" {
+				createErr = fmt.Errorf("LIGHTER trading private key not configured (lighter_api_key_private_key)")
+				break
 			}
+			tempTrader, createErr = trader.NewLighterTraderV2(
+				exchangeCfg.LighterPrivateKey,
+				exchangeCfg.LighterWalletAddr,
+				exchangeCfg.LighterAPIKeyPrivateKey,
+				exchangeCfg.Testnet,
+			)
 		default:
 			logger.Infof("⚠️ Unsupported exchange type: %s, using user input for initial balance", exchangeCfg.ExchangeType)
 		}
@@ -1105,20 +1101,16 @@ func (s *Server) handleSyncBalance(c *gin.Context) {
 			exchangeCfg.Passphrase,
 		)
 	case "lighter":
-		if exchangeCfg.LighterAPIKeyPrivateKey != "" {
-			tempTrader, createErr = trader.NewLighterTraderV2(
-				exchangeCfg.LighterPrivateKey,
-				exchangeCfg.LighterWalletAddr,
-				exchangeCfg.LighterAPIKeyPrivateKey,
-				exchangeCfg.Testnet,
-			)
-		} else {
-			tempTrader, createErr = trader.NewLighterTrader(
-				exchangeCfg.LighterPrivateKey,
-				exchangeCfg.LighterWalletAddr,
-				exchangeCfg.Testnet,
-			)
+		if exchangeCfg.LighterAPIKeyPrivateKey == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "LIGHTER trading private key not configured (lighter_api_key_private_key)"})
+			return
 		}
+		tempTrader, createErr = trader.NewLighterTraderV2(
+			exchangeCfg.LighterPrivateKey,
+			exchangeCfg.LighterWalletAddr,
+			exchangeCfg.LighterAPIKeyPrivateKey,
+			exchangeCfg.Testnet,
+		)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported exchange type"})
 		return
@@ -1259,20 +1251,16 @@ func (s *Server) handleClosePosition(c *gin.Context) {
 			exchangeCfg.Passphrase,
 		)
 	case "lighter":
-		if exchangeCfg.LighterAPIKeyPrivateKey != "" {
-			tempTrader, createErr = trader.NewLighterTraderV2(
-				exchangeCfg.LighterPrivateKey,
-				exchangeCfg.LighterWalletAddr,
-				exchangeCfg.LighterAPIKeyPrivateKey,
-				exchangeCfg.Testnet,
-			)
-		} else {
-			tempTrader, createErr = trader.NewLighterTrader(
-				exchangeCfg.LighterPrivateKey,
-				exchangeCfg.LighterWalletAddr,
-				exchangeCfg.Testnet,
-			)
+		if exchangeCfg.LighterAPIKeyPrivateKey == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "LIGHTER trading private key not configured (lighter_api_key_private_key)"})
+			return
 		}
+		tempTrader, createErr = trader.NewLighterTraderV2(
+			exchangeCfg.LighterPrivateKey,
+			exchangeCfg.LighterWalletAddr,
+			exchangeCfg.LighterAPIKeyPrivateKey,
+			exchangeCfg.Testnet,
+		)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported exchange type"})
 		return
@@ -1635,6 +1623,24 @@ func (s *Server) handleCreateExchange(c *gin.Context) {
 	if !validTypes[req.ExchangeType] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid exchange type: %s", req.ExchangeType)})
 		return
+	}
+
+	switch req.ExchangeType {
+	case "hyperliquid":
+		if strings.TrimSpace(req.APIKey) == "" || strings.TrimSpace(req.HyperliquidWalletAddr) == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Hyperliquid requires agent private key and main wallet address"})
+			return
+		}
+	case "aster":
+		if strings.TrimSpace(req.AsterUser) == "" || strings.TrimSpace(req.AsterSigner) == "" || strings.TrimSpace(req.AsterPrivateKey) == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Aster requires user address, signer address, and API wallet private key"})
+			return
+		}
+	case "lighter":
+		if strings.TrimSpace(req.LighterWalletAddr) == "" || strings.TrimSpace(req.LighterAPIKeyPrivateKey) == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Lighter requires main wallet address and trading private key (40-byte API Key)"})
+			return
+		}
 	}
 
 	// Create new exchange account

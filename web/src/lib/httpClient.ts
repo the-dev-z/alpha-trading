@@ -93,10 +93,7 @@ export class HttpClient {
       throw new Error('Network error')
     }
 
-    const { status } = error.response as AxiosResponse<{
-      error?: string
-      message?: string
-    }>
+    const { status, data } = error.response as AxiosResponse
 
     // Handle 401 Unauthorized
     if (status === 401) {
@@ -148,10 +145,16 @@ export class HttpClient {
 
     // Handle 500+ Server Error - system error
     if (status >= 500) {
+      const serverMessage =
+        (data as any)?.error ||
+        (data as any)?.message ||
+        (typeof data === 'string' ? data : '') ||
+        ''
       toast.error('Server Error', {
-        description: 'Please try again later or contact support',
+        description:
+          serverMessage || 'Please try again later or contact support',
       })
-      throw new Error('Server error')
+      throw new Error(serverMessage || 'Server error')
     }
 
     // 4xx errors (except 401/403/404) are business logic errors
