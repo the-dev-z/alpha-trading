@@ -144,7 +144,7 @@ Alpha Trading offers bounties for valuable contributions:
 
 ### Core Team
 
-- **Tinkle** - [@Web3Tinkle](https://x.com/Web3Tinkle)
+
 - **Tintin** - [@Tintinx2021](https://x.com/Tintinx2021)
 
 **Contact:**

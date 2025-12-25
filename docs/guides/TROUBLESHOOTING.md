@@ -242,7 +242,7 @@ lsof -i :8080
 netstat -tulpn | grep 8080
 
 # Kill the process or change port in .env
-ALPHA_BACKEND_PORT=8081
+ALPHA_BACKEND_PORT=8080
 ```
 
 ---

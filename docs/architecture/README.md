@@ -97,7 +97,7 @@ Multi-AI collaborative decision system:
 ## Project Structure
 
 ```
-nofx/
+alpha-trading/
 ├── main.go                    # Entry point
 ├── api/                       # HTTP API (Gin framework)
 ├── trader/                    # Trading execution layer

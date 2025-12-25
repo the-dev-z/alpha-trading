@@ -92,7 +92,7 @@ AI 交易是**实验性**的，**不保证盈利**。请始终用小额资金测
 lsof -i :8080
 
 # 修改 .env 中的端口
-ALPHA_BACKEND_PORT=8081
+ALPHA_BACKEND_PORT=8080
 ```
 
 ---

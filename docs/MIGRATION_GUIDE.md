@@ -34,7 +34,7 @@ These stay in the root for GitHub recognition:
 
 ### Before (❌ Problems)
 ```
-nofx/
+alpha-trading/
 ├── README.md
 ├── README.zh-CN.md
 ├── README.ru.md
@@ -57,7 +57,7 @@ nofx/
 
 ### After (✅ Benefits)
 ```
-nofx/
+alpha-trading/
 ├── README.md              # Project homepage
 ├── LICENSE                # Legal (GitHub needs it here)
 ├── CONTRIBUTING.md        # GitHub auto-links
@@ -234,6 +234,6 @@ Closes #XXX
 ---
 
 **Migration Date:** 2025-11-01
-**Maintainers:** Tinkle Community
+**Maintainers:** Alpha Trading Team
 
 [← Back to Documentation Home](README.md)

@@ -92,7 +92,7 @@ See [Issue #202](https://github.com/the-dev-z/alpha-trading/issues/202) and [Tro
 lsof -i :8080
 
 # Change port in .env
-ALPHA_BACKEND_PORT=8081
+ALPHA_BACKEND_PORT=8080
 ```
 
 ---

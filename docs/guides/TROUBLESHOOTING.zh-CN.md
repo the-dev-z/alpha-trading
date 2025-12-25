@@ -242,7 +242,7 @@ lsof -i :8080
 netstat -tulpn | grep 8080
 
 # 杀死进程或在 .env 中更改端口
-ALPHA_BACKEND_PORT=8081
+ALPHA_BACKEND_PORT=8080
 ```
 
 ---

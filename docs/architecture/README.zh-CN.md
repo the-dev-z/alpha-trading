@@ -97,7 +97,7 @@ Alpha Trading 是一个支持加密货币和美股市场的全栈 AI 交易平�
 ## 项目结构
 
 ```
-nofx/
+alpha-trading/
 ├── main.go                    # 程序入口
 ├── api/                       # HTTP API (Gin 框架)
 ├── trader/                    # 交易执行层

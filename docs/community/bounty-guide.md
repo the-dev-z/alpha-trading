@@ -217,7 +217,7 @@ Details: [详情链接]
 
 - **GitHub Issues**: https://github.com/the-dev-z/alpha-trading/issues
 - **Telegram**: https://github.com/the-dev-z/alpha-trading/discussions
-- **Twitter/X**: [@Web3Tinkle](https://x.com/Web3Tinkle)
+- **GitHub**: [Issues](https://github.com/the-dev-z/alpha-trading/issues)
 
 ---
 

@@ -101,7 +101,7 @@ Our GitHub Action automatically analyzes your PR and suggests the most suitable 
 When creating a PR, add the template parameter to the URL:
 
 ```
-https://github.com/YOUR_ORG/nofx/compare/dev...YOUR_BRANCH?template=backend.md
+https://github.com/YOUR_ORG/alpha-trading/compare/dev...YOUR_BRANCH?template=backend.md
 ```
 
 替换 `backend.md` 为：

@@ -24,7 +24,7 @@ If you discover a security vulnerability, please follow these steps:
 
 Send an email to the security team at:
 - **Email**: tinklefund@gmail.com (or contact maintainers directly via Twitter DM)
-- **Twitter**: [@the-dev-z](https://github.com/the-dev-z/alpha-trading) or [@Web3Tinkle](https://x.com/Web3Tinkle)
+- **Twitter**: [@the-dev-z](https://github.com/the-dev-z/alpha-trading) or [
 
 ### 2. Information to Include
 

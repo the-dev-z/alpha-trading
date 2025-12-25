@@ -50,7 +50,7 @@ Public disclosure before a fix is available puts all users at risk.
 **Step 1: Report Privately**
 
 Contact core team directly:
-- **Tinkle:** [@Web3Tinkle on Twitter](https://x.com/Web3Tinkle) (DM)
+- **GitHub**: [Issues](https://github.com/the-dev-z/alpha-trading/issues)
 
 **Alternative:** Encrypted communication via [Keybase](https://keybase.io/) (if available)
 
@@ -232,7 +232,7 @@ We thank the following security researchers for responsibly disclosing vulnerabi
 ## 📞 Contact
 
 **For security issues ONLY:**
-- 🐦 **Twitter DM:** [@Web3Tinkle](https://x.com/Web3Tinkle)
+- 🐦 **GitHub Issues: https://github.com/the-dev-z/alpha-trading/issues
 
 **For general questions:**
 - See [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -290,7 +290,7 @@ Alpha Trading 是一个处理真实资金和 API 凭证的 AI 交易系统。我
 **步骤 1：私下报告**
 
 直接联系核心团队：
-- **Tinkle:** [@Web3Tinkle on Twitter](https://x.com/Web3Tinkle)（私信）
+- **GitHub**: [Issues](https://github.com/the-dev-z/alpha-trading/issues)
 
 **替代方案：** 通过 [Keybase](https://keybase.io/) 加密通信（如果可用）
 
@@ -459,7 +459,7 @@ go build -o nofx
 ## 📞 联系方式
 
 **仅限安全问题：**
-- 🐦 **Twitter 私信：** [@Web3Tinkle](https://x.com/Web3Tinkle)
+- 🐦 **GitHub Issues: https://github.com/the-dev-z/alpha-trading/issues
 
 **一般问题：**
 - 加入 [Telegram 社区](https://github.com/the-dev-z/alpha-trading/discussions)

@@ -1027,7 +1027,7 @@ export const translations = {
 
     faqReportBugs: 'How do I report bugs?',
     faqReportBugsAnswer:
-      'For bugs: Open a GitHub Issue with: 1) Clear description of the problem; 2) Steps to reproduce; 3) Expected vs actual behavior; 4) System info (OS, Docker version, browser); 5) Relevant logs. For SECURITY vulnerabilities: Do NOT open public issues - DM @Web3Tinkle on Twitter instead.',
+      'For bugs: Open a GitHub Issue with: 1) Clear description of the problem; 2) Steps to reproduce; 3) Expected vs actual behavior; 4) System info (OS, Docker version, browser); 5) Relevant logs. For SECURITY vulnerabilities: Do NOT open public issues - report via GitHub Issues instead.',
 
     // Web Crypto Environment Check
     environmentCheck: {
@@ -2131,7 +2131,7 @@ export const translations = {
 
     faqReportBugs: '如何报告 bug？',
     faqReportBugsAnswer:
-      'Bug 报告：在 GitHub 开 Issue，包含：1）问题清晰描述；2）复现步骤；3）预期 vs 实际行为；4）系统信息（OS、Docker 版本、浏览器）；5）相关日志。安全漏洞：不要开公开 issue - 请在 Twitter 私信 @Web3Tinkle。',
+      'Bug 报告：在 GitHub 开 Issue，包含：1）问题清晰描述；2）复现步骤；3）预期 vs 实际行为；4）系统信息（OS、Docker 版本、浏览器）；5）相关日志。安全漏洞：不要开公开 issue - 请通过 GitHub Issues 报告。',
 
     // Web Crypto Environment Check
     environmentCheck: {

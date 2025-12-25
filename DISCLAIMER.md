@@ -176,7 +176,7 @@ If any provision of this disclaimer is found to be unenforceable or invalid, tha
 
 For legal inquiries, contact:
 - **Email**: tinklefund@gmail.com
-- **Twitter**: [@Web3Tinkle](https://x.com/Web3Tinkle)
+- **GitHub**: [Issues](https://github.com/the-dev-z/alpha-trading/issues)
 
 ---
 
