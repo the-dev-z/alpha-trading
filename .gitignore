@@ -11,6 +11,7 @@ CLAUDE.md
 nofx-auto
 *.exe
 nofx
+alpha-trading
 nofx_test
 
 # Go 相关
