@@ -5,7 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"nofx/logger"
+	"alpha-trading/logger"
 	"strconv"
 	"strings"
 	"sync"

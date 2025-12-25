@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"nofx/logger"
+	"alpha-trading/logger"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 
-	"nofx/mcp"
-	"nofx/store"
+	"alpha-trading/mcp"
+	"alpha-trading/store"
 )
 
 type Manager struct {

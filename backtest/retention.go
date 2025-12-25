@@ -1,7 +1,7 @@
 package backtest
 
 import (
-	"nofx/logger"
+	"alpha-trading/logger"
 	"os"
 	"sort"
 	"time"

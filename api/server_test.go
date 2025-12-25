@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"nofx/store"
+	"alpha-trading/store"
 )
 
 // TestUpdateTraderRequest_SystemPromptTemplate Test whether SystemPromptTemplate field exists when updating trader

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/decision"
-	"nofx/market"
-	"nofx/provider"
-	"nofx/store"
+	"alpha-trading/decision"
+	"alpha-trading/market"
+	"alpha-trading/provider"
+	"alpha-trading/store"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/stretchr/testify/suite"

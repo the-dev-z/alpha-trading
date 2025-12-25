@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"nofx/decision"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
+	"alpha-trading/decision"
+	"alpha-trading/logger"
+	"alpha-trading/market"
+	"alpha-trading/mcp"
+	"alpha-trading/store"
 )
 
 // TraderExecutor interface for executing trades

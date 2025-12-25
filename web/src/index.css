@@ -218,7 +218,7 @@ body {
   z-index: 9999;
 }
 
-.nofx-toast {
+.alpha-toast {
   background: #0b0e11 !important;
   border: 1px solid var(--panel-border) !important;
   color: var(--text-primary) !important;
@@ -226,57 +226,57 @@ body {
   border-radius: 6px !important;
 }
 
-.nofx-toast .sonner-title {
+.alpha-toast .sonner-title {
   color: var(--text-primary) !important;
   font-weight: 700;
 }
 
-.nofx-toast .sonner-description {
+.alpha-toast .sonner-description {
   color: var(--text-secondary) !important;
 }
 
 /* Success / Error / Warning tint */
-.nofx-toast[data-type='success'] {
+.alpha-toast[data-type='success'] {
   background: #0b0e11 !important;
   border-color: var(--binance-green) !important;
   border-left: 3px solid var(--binance-green) !important;
 }
 
-.nofx-toast[data-type='success'] .sonner-title,
-.nofx-toast[data-type='success'] .sonner-description {
+.alpha-toast[data-type='success'] .sonner-title,
+.alpha-toast[data-type='success'] .sonner-description {
   color: var(--binance-green) !important;
 }
 
-.nofx-toast[data-type='error'] {
+.alpha-toast[data-type='error'] {
   background: #0b0e11 !important;
   border-color: var(--binance-red) !important;
   border-left: 3px solid var(--binance-red) !important;
 }
 
-.nofx-toast[data-type='error'] .sonner-title,
-.nofx-toast[data-type='error'] .sonner-description {
+.alpha-toast[data-type='error'] .sonner-title,
+.alpha-toast[data-type='error'] .sonner-description {
   color: var(--binance-red) !important;
 }
 
-.nofx-toast[data-type='warning'],
-.nofx-toast[data-type='info'] {
+.alpha-toast[data-type='warning'],
+.alpha-toast[data-type='info'] {
   background: #0b0e11 !important;
   border-color: var(--binance-yellow) !important;
   border-left: 3px solid var(--binance-yellow) !important;
 }
 
-.nofx-toast[data-type='warning'] .sonner-title,
-.nofx-toast[data-type='warning'] .sonner-description,
-.nofx-toast[data-type='info'] .sonner-title,
-.nofx-toast[data-type='info'] .sonner-description {
+.alpha-toast[data-type='warning'] .sonner-title,
+.alpha-toast[data-type='warning'] .sonner-description,
+.alpha-toast[data-type='info'] .sonner-title,
+.alpha-toast[data-type='info'] .sonner-description {
   color: var(--binance-yellow) !important;
 }
 
-.nofx-toast .sonner-close-button {
+.alpha-toast .sonner-close-button {
   color: var(--text-secondary) !important;
 }
 
-.nofx-toast .sonner-close-button:hover {
+.alpha-toast .sonner-close-button:hover {
   color: var(--text-primary) !important;
 }
 

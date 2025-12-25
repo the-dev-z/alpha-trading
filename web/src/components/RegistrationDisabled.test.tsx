@@ -33,11 +33,11 @@ describe('RegistrationDisabled Component', () => {
       expect(container).toBeTruthy()
     })
 
-    it('should display the NoFx logo', () => {
+    it('should display the Alpha Trading logo', () => {
       renderComponent()
-      const logo = screen.getByAltText('NoFx Logo')
+      const logo = screen.getByAltText('Alpha Trading Logo')
       expect(logo).toBeTruthy()
-      expect(logo.getAttribute('src')).toBe('/icons/nofx.svg')
+      expect(logo.getAttribute('src')).toBe('/icons/alpha.svg')
     })
 
     it('should display registration closed heading', () => {

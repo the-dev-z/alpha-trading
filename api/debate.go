@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"sync"
 
-	"nofx/debate"
-	"nofx/logger"
-	"nofx/provider"
-	"nofx/store"
+	"alpha-trading/debate"
+	"alpha-trading/logger"
+	"alpha-trading/provider"
+	"alpha-trading/store"
 
 	"github.com/gin-gonic/gin"
 )

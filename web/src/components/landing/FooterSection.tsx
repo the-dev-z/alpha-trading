@@ -24,14 +24,14 @@ export default function FooterSection({ language }: FooterSectionProps) {
     resources: [
       {
         name: language === 'zh' ? '文档' : 'Documentation',
-        href: 'https://github.com/NoFxAiOS/nofx/blob/main/README.md',
+        href: 'https://github.com/the-dev-z/alpha-trading/blob/main/README.md',
       },
-      { name: 'Issues', href: 'https://github.com/NoFxAiOS/nofx/issues' },
-      { name: 'Pull Requests', href: 'https://github.com/NoFxAiOS/nofx/pulls' },
+      { name: 'Issues', href: 'https://github.com/the-dev-z/alpha-trading/issues' },
+      { name: 'Pull Requests', href: 'https://github.com/the-dev-z/alpha-trading/pulls' },
     ],
     supporters: [
       { name: 'Aster DEX', href: 'https://www.asterdex.com/en/referral/fdfc0e' },
-      { name: 'Binance', href: 'https://www.maxweb.red/join?ref=NOFXAI' },
+      { name: 'Binance', href: 'https://www.maxweb.red/join?ref=Alpha TradingAI' },
       { name: 'Hyperliquid', href: 'https://hyperliquid.xyz/' },
     ],
   }
@@ -44,9 +44,9 @@ export default function FooterSection({ language }: FooterSectionProps) {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <img src="/icons/nofx.svg" alt="NOFX Logo" className="w-8 h-8" />
+              <img src="/icons/alpha.svg" alt="Alpha Trading Logo" className="w-8 h-8" />
               <span className="text-xl font-bold" style={{ color: '#EAECEF' }}>
-                NOFX
+                Alpha Trading
               </span>
             </div>
             <p className="text-sm mb-6" style={{ color: '#5E6673' }}>

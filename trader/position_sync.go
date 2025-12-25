@@ -2,8 +2,8 @@ package trader
 
 import (
 	"fmt"
-	"nofx/logger"
-	"nofx/store"
+	"alpha-trading/logger"
+	"alpha-trading/store"
 	"strings"
 	"sync"
 	"time"

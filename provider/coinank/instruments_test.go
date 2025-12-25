@@ -3,7 +3,7 @@ package coinank
 import (
 	"context"
 	"encoding/json"
-	"nofx/provider/coinank/coinank_enum"
+	"alpha-trading/provider/coinank/coinank_enum"
 	"testing"
 )
 

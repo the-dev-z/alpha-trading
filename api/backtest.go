@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"nofx/backtest"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/provider"
-	"nofx/store"
+	"alpha-trading/backtest"
+	"alpha-trading/logger"
+	"alpha-trading/market"
+	"alpha-trading/provider"
+	"alpha-trading/store"
 
 	"github.com/gin-gonic/gin"
 )

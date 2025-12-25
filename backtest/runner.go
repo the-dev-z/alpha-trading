@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"nofx/logger"
+	"alpha-trading/logger"
 	"os"
 	"path/filepath"
 	"sort"
@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"nofx/decision"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
+	"alpha-trading/decision"
+	"alpha-trading/market"
+	"alpha-trading/mcp"
+	"alpha-trading/store"
 )
 
 var (

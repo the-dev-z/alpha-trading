@@ -4,7 +4,7 @@
 export const OFFICIAL_LINKS = {
   twitter: '',
   telegram: '',
-  github: 'https://github.com/the-dev-z/nofx',
+  github: 'https://github.com/the-dev-z/alpha-trading',
 } as const
 
 // Brand info

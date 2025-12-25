@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"nofx/market"
+	"alpha-trading/market"
 )
 
 type timeframeSeries struct {

@@ -3,7 +3,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"nofx/logger"
+	"alpha-trading/logger"
 	"strings"
 	"time"
 

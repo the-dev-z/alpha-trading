@@ -3,8 +3,8 @@ package api
 import (
 	"log"
 	"net/http"
-	"nofx/config"
-	"nofx/crypto"
+	"alpha-trading/config"
+	"alpha-trading/crypto"
 
 	"github.com/gin-gonic/gin"
 )

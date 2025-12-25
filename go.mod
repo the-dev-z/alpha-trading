@@ -1,4 +1,4 @@
-module nofx
+module alpha-trading
 
 go 1.25.0
 

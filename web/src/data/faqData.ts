@@ -26,7 +26,7 @@ export interface FAQCategory {
 
 /**
  * FAQ Data Configuration
- * Comprehensive FAQ covering all aspects of NOFX
+ * Comprehensive FAQ covering all aspects of Alpha Trading
  *
  * Categories:
  * 1. Getting Started - Basic concepts and overview
@@ -47,8 +47,8 @@ export const faqCategories: FAQCategory[] = [
     items: [
       {
         id: 'what-is-nofx',
-        questionKey: 'faqWhatIsNOFX',
-        answerKey: 'faqWhatIsNOFXAnswer',
+        questionKey: 'faqWhatIsAlpha Trading',
+        answerKey: 'faqWhatIsAlpha TradingAnswer',
       },
       {
         id: 'how-does-it-work',
@@ -111,8 +111,8 @@ export const faqCategories: FAQCategory[] = [
       },
       {
         id: 'update-nofx',
-        questionKey: 'faqUpdateNOFX',
-        answerKey: 'faqUpdateNOFXAnswer',
+        questionKey: 'faqUpdateAlpha Trading',
+        answerKey: 'faqUpdateAlpha TradingAnswer',
       },
     ],
   },
@@ -277,8 +277,8 @@ export const faqCategories: FAQCategory[] = [
       },
       {
         id: 'can-nofx-steal-funds',
-        questionKey: 'faqCanNOFXStealFunds',
-        answerKey: 'faqCanNOFXStealFundsAnswer',
+        questionKey: 'faqCanAlpha TradingStealFunds',
+        answerKey: 'faqCanAlpha TradingStealFundsAnswer',
       },
     ],
   },

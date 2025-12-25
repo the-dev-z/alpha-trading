@@ -15,7 +15,7 @@ export default function HowItWorksSection({ language }: HowItWorksSectionProps) 
       desc: language === 'zh'
         ? '在你的服务器上运行一条命令即可完成部署'
         : 'Run a single command on your server to deploy',
-      code: 'curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash',
+      code: 'curl -fsSL https://raw.githubusercontent.com/the-dev-z/alpha-trading/main/install.sh | bash',
     },
     {
       icon: Rocket,

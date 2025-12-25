@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/mcp"
+	"alpha-trading/mcp"
 )
 
 // configureMCPClient creates/clones an MCP client based on configuration (returns mcp.AIClient interface).

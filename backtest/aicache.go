@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"nofx/decision"
-	"nofx/market"
+	"alpha-trading/decision"
+	"alpha-trading/market"
 )
 
 type cachedDecision struct {

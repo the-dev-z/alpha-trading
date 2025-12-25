@@ -10,7 +10,7 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"nofx/logger"
+	"alpha-trading/logger"
 	"strconv"
 	"strings"
 	"sync"

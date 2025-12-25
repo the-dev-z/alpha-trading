@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"nofx/logger"
+	"alpha-trading/logger"
 	"math"
 	"strconv"
 	"strings"

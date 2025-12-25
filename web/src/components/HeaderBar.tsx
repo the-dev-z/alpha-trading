@@ -81,12 +81,12 @@ export default function HeaderBar({
           }}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
         >
-          <img src="/icons/nofx.svg" alt="NOFX Logo" className="w-7 h-7" />
+          <img src="/icons/alpha.svg" alt="Alpha Trading Logo" className="w-7 h-7" />
           <span
             className="text-lg font-bold"
             style={{ color: 'var(--brand-yellow)' }}
           >
-            NOFX
+            Alpha Trading
           </span>
         </div>
 

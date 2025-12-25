@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"nofx/logger"
+	"alpha-trading/logger"
 )
 
 // Config client configuration (centralized management of all configurations)

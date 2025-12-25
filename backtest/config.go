@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"alpha-trading/market"
+	"alpha-trading/store"
 )
 
 // AIConfig defines the AI client configuration used in backtesting.

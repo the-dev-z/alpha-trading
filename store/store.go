@@ -5,7 +5,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"nofx/logger"
+	"alpha-trading/logger"
 	"sync"
 
 	_ "modernc.org/sqlite"
