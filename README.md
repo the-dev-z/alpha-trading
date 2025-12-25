@@ -12,12 +12,48 @@
 ## Features
 
 - **Multi-Exchange**: Trade on Binance, Bybit, OKX, Bitget, Hyperliquid, Aster DEX, Lighter
+- **Multi-AI Support**: Run DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi
 - **Strategy Studio**: Visual strategy builder with coin sources, indicators, and risk controls
 - **Real-Time Dashboard**: Live positions, P/L tracking, and decision logs
 - **Backtesting**: Historical simulation with performance metrics
 - **Web-Based Config**: Configure everything through the web interface
 
 > **Risk Warning**: Crypto trading carries significant risks. Use for learning/research or test with small amounts only.
+
+---
+
+## Supported Exchanges
+
+### CEX (Centralized)
+
+| Exchange | Status | Register |
+|----------|--------|----------|
+| **Binance** | ✅ | [Register](https://www.binance.com/join?ref=NOFXENG) |
+| **Bybit** | ✅ | [Register](https://partner.bybit.com/b/83856) |
+| **OKX** | ✅ | [Register](https://www.okx.com/join/1865360) |
+| **Bitget** | ✅ | [Register](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
+
+### Perp-DEX (Decentralized)
+
+| Exchange | Status | Register |
+|----------|--------|----------|
+| **Hyperliquid** | ✅ | [Register](https://app.hyperliquid.xyz/join/AITRADING) |
+| **Aster DEX** | ✅ | [Register](https://www.asterdex.com/en/referral/fdfc0e) |
+| **Lighter** | ✅ | [Register](https://app.lighter.xyz/?referral=68151432) |
+
+---
+
+## Supported AI Models
+
+| AI Model | Status | Get API Key |
+|----------|--------|-------------|
+| **DeepSeek** | ✅ | [Get API Key](https://platform.deepseek.com) |
+| **Qwen** | ✅ | [Get API Key](https://dashscope.console.aliyun.com) |
+| **OpenAI (GPT)** | ✅ | [Get API Key](https://platform.openai.com) |
+| **Claude** | ✅ | [Get API Key](https://console.anthropic.com) |
+| **Gemini** | ✅ | [Get API Key](https://aistudio.google.com) |
+| **Grok** | ✅ | [Get API Key](https://console.x.ai) |
+| **Kimi** | ✅ | [Get API Key](https://platform.moonshot.cn) |
 
 ---
 
@@ -33,17 +69,34 @@ docker compose -f docker-compose.prod.yml up -d
 
 Access: **http://127.0.0.1:3000**
 
-### Manual Installation
+```bash
+# Management commands
+docker compose -f docker-compose.prod.yml logs -f    # View logs
+docker compose -f docker-compose.prod.yml restart    # Restart
+docker compose -f docker-compose.prod.yml down       # Stop
+docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d  # Update
+```
 
-#### Prerequisites
+---
+
+## Manual Installation
+
+### Prerequisites
 
 - **Go 1.21+**
 - **Node.js 18+**
-- **TA-Lib**: `brew install ta-lib` (macOS) or `apt-get install libta-lib0-dev` (Ubuntu)
+- **TA-Lib** (technical indicator library)
 
-#### Steps
+### Linux / macOS
 
 ```bash
+# Install TA-Lib
+# macOS
+brew install ta-lib
+
+# Ubuntu/Debian
+sudo apt-get install libta-lib0-dev
+
 # Clone and build
 git clone https://github.com/the-dev-z/alpha-trading.git
 cd alpha-trading
@@ -57,21 +110,59 @@ go build -o alpha-trading
 cd web && npm install && npm run dev
 ```
 
-Access: **http://127.0.0.1:3000**
+### Windows
+
+#### Option 1: Docker Desktop (Recommended)
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+2. Open PowerShell:
+   ```powershell
+   curl -o docker-compose.prod.yml https://raw.githubusercontent.com/the-dev-z/alpha-trading/main/docker-compose.prod.yml
+   docker compose -f docker-compose.prod.yml up -d
+   ```
+3. Access: **http://127.0.0.1:3000**
+
+#### Option 2: WSL2
+
+1. Install WSL2: `wsl --install` (PowerShell as Admin)
+2. Install Ubuntu from Microsoft Store
+3. In Ubuntu terminal:
+   ```bash
+   # Install dependencies
+   sudo apt update && sudo apt upgrade -y
+   wget https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+   sudo tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+   echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+   source ~/.bashrc
+
+   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+   sudo apt-get install -y nodejs libta-lib0-dev git
+
+   # Clone and run
+   git clone https://github.com/the-dev-z/alpha-trading.git
+   cd alpha-trading
+   go build -o alpha-trading && ./alpha-trading
+   ```
 
 ---
 
-## Supported Exchanges
+## Server Deployment
 
-| Exchange | Type | Status |
-|----------|------|--------|
-| **Binance** | CEX | ✅ |
-| **Bybit** | CEX | ✅ |
-| **OKX** | CEX | ✅ |
-| **Bitget** | CEX | ✅ |
-| **Hyperliquid** | Perp-DEX | ✅ |
-| **Aster DEX** | Perp-DEX | ✅ |
-| **Lighter** | Perp-DEX | ✅ |
+### Quick Deploy (HTTP)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/the-dev-z/alpha-trading/main/install.sh | bash
+```
+
+Access via `http://YOUR_SERVER_IP:3000`
+
+### HTTPS with Cloudflare
+
+1. Add domain to [Cloudflare](https://dash.cloudflare.com) (free plan works)
+2. Create DNS A record → Your server IP (Proxied)
+3. SSL/TLS → Flexible mode
+4. Set `TRANSPORT_ENCRYPTION=true` in `.env`
+5. Access via `https://your-domain.com`
 
 ---
 
@@ -87,7 +178,32 @@ ALPHA_FRONTEND_PORT=3000
 # Security (required)
 JWT_SECRET=your-random-secret-here
 DATA_ENCRYPTION_KEY=your-base64-32-byte-key
+
+# Generate keys with:
+# openssl rand -base64 32
 ```
+
+---
+
+## Common Issues
+
+### TA-Lib not found
+```bash
+# macOS
+brew install ta-lib
+
+# Ubuntu
+sudo apt-get install libta-lib0-dev
+```
+
+### AI API timeout
+- Check if API key is correct
+- Check network connection
+- System timeout is 120 seconds
+
+### Frontend can't connect to backend
+- Ensure backend is running on http://localhost:8080
+- Check if port is occupied
 
 ---
 

@@ -698,7 +698,7 @@ export const translations = {
 
     // Features Section
     coreFeatures: 'Core Features',
-    whyChooseNofx: 'Why Choose Alpha Trading?',
+    whyChooseAlpha: 'Why Choose Alpha Trading?',
     openCommunityDriven:
       'Open source, transparent, community-driven AI trading OS',
     openSourceSelfHosted: '100% Open Source & Self-Hosted',
@@ -724,19 +724,19 @@ export const translations = {
     secureFeatures4: 'Trading log auditing',
 
     // About Section
-    aboutNofx: 'About Alpha Trading',
-    whatIsNofx: 'What is Alpha Trading?',
-    nofxNotAnotherBot:
+    aboutAlpha: 'About Alpha Trading',
+    whatIsAlpha: 'What is Alpha Trading?',
+    alphaNotAnotherBot:
       "Alpha Trading is not another trading bot, but the 'Linux' of AI trading —",
-    nofxDescription1:
+    alphaDescription1:
       'a transparent, trustworthy open source OS that provides a unified',
-    nofxDescription2:
+    alphaDescription2:
       "'decision-risk-execution' layer, supporting all asset classes.",
-    nofxDescription3:
+    alphaDescription3:
       'Starting with crypto markets (24/7, high volatility perfect testing ground), future expansion to stocks, futures, forex. Core: open architecture, AI',
-    nofxDescription4:
+    alphaDescription4:
       'Darwinism (multi-agent self-competition, strategy evolution), CodeFi',
-    nofxDescription5:
+    alphaDescription5:
       'flywheel (developers get point rewards for PR contributions).',
     youFullControl: 'You 100% Control',
     fullControlDesc: 'Complete control over AI prompts and funds',
@@ -775,7 +775,7 @@ export const translations = {
     strategicInvestment: '(Strategic Investment)',
 
     // Login Modal
-    accessNofxPlatform: 'Access Alpha Trading Platform',
+    accessAlphaPlatform: 'Access Alpha Trading Platform',
     loginRegisterPrompt:
       'Please login or register to access the full AI trading platform',
     registerNewAccount: 'Register New Account',
@@ -1815,7 +1815,7 @@ export const translations = {
 
     // Features Section
     coreFeatures: '核心功能',
-    whyChooseNofx: '为什么选择 Alpha Trading？',
+    whyChooseAlpha: '为什么选择 Alpha Trading？',
     openCommunityDriven: '开源、透明、社区驱动的 AI 交易操作系统',
     openSourceSelfHosted: '100% 开源与自托管',
     openSourceDesc: '你的框架，你的规则。非黑箱，支持自定义提示词和多模型。',
@@ -1837,16 +1837,16 @@ export const translations = {
     secureFeatures4: '交易日志审计',
 
     // About Section
-    aboutNofx: '关于 Alpha Trading',
-    whatIsNofx: '什么是 Alpha Trading？',
-    nofxNotAnotherBot: "Alpha Trading 不是另一个交易机器人，而是 AI 交易的 'Linux' ——",
-    nofxDescription1: "一个透明、可信任的开源 OS，提供统一的 '决策-风险-执行'",
-    nofxDescription2: '层，支持所有资产类别。',
-    nofxDescription3:
+    aboutAlpha: '关于 Alpha Trading',
+    whatIsAlpha: '什么是 Alpha Trading？',
+    alphaNotAnotherBot: "Alpha Trading 不是另一个交易机器人，而是 AI 交易的 'Linux' ——",
+    alphaDescription1: "一个透明、可信任的开源 OS，提供统一的 '决策-风险-执行'",
+    alphaDescription2: '层，支持所有资产类别。',
+    alphaDescription3:
       '从加密市场起步（24/7、高波动性完美测试场），未来扩展到股票、期货、外汇。核心：开放架构、AI',
-    nofxDescription4:
+    alphaDescription4:
       '达尔文主义（多代理自竞争、策略进化）、CodeFi 飞轮（开发者 PR',
-    nofxDescription5: '贡献获积分奖励）。',
+    alphaDescription5: '贡献获积分奖励）。',
     youFullControl: '你 100% 掌控',
     fullControlDesc: '完全掌控 AI 提示词和资金',
     startupMessages1: '启动自动交易系统...',
@@ -1882,7 +1882,7 @@ export const translations = {
     strategicInvestment: '(战略投资)',
 
     // Login Modal
-    accessNofxPlatform: '访问 Alpha Trading 平台',
+    accessAlphaPlatform: '访问 Alpha Trading 平台',
     loginRegisterPrompt: '请选择登录或注册以访问完整的 AI 交易平台',
     registerNewAccount: '注册新账号',
 

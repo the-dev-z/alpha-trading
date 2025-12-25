@@ -45,7 +45,7 @@ export default function LoginModal({ onClose, language }: LoginModalProps) {
           className="text-2xl font-bold mb-6"
           style={{ color: 'var(--brand-light-gray)' }}
         >
-          {t('accessNofxPlatform', language)}
+          {t('accessAlphaPlatform', language)}
         </h2>
         <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
           {t('loginRegisterPrompt', language)}

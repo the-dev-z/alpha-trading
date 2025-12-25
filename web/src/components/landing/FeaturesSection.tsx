@@ -78,7 +78,7 @@ export default function FeaturesSection({ language }: FeaturesSectionProps) {
           viewport={{ once: true }}
         >
           <h2 className="text-4xl lg:text-5xl font-bold mb-4" style={{ color: '#EAECEF' }}>
-            {t('whyChooseNofx', language)}
+            {t('whyChooseAlpha', language)}
           </h2>
           <p className="text-lg max-w-2xl mx-auto" style={{ color: '#848E9C' }}>
             {language === 'zh'

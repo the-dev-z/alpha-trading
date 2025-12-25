@@ -51,16 +51,16 @@ export default function AboutSection({ language }: AboutSectionProps) {
             >
               <Terminal className="w-4 h-4" style={{ color: '#F0B90B' }} />
               <span className="text-xs font-medium" style={{ color: '#F0B90B' }}>
-                {t('aboutNofx', language)}
+                {t('aboutAlpha', language)}
               </span>
             </motion.div>
 
             <h2 className="text-4xl lg:text-5xl font-bold mb-6" style={{ color: '#EAECEF' }}>
-              {t('whatIsNofx', language)}
+              {t('whatIsAlpha', language)}
             </h2>
 
             <p className="text-lg mb-8 leading-relaxed" style={{ color: '#848E9C' }}>
-              {t('nofxNotAnotherBot', language)} {t('nofxDescription1', language)}
+              {t('alphaNotAnotherBot', language)} {t('alphaDescription1', language)}
             </p>
 
             {/* Feature Pills */}
