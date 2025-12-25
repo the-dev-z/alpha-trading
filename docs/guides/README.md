@@ -1,8 +1,8 @@
-# 📘 NOFX User Guides
+# 📘 Alpha Trading User Guides
 
 **Language:** [English](README.md) | [中文](README.zh-CN.md)
 
-Comprehensive guides to help you use NOFX effectively.
+Comprehensive guides to help you use Alpha Trading effectively.
 
 ---
 
@@ -129,9 +129,9 @@ Run multiple AI models simultaneously:
 ## 🆘 Need Help?
 
 **Can't find what you need?**
-- 💬 [Telegram Community](https://t.me/nofx_dev_community)
-- 🐛 [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues)
-- 🐦 [Twitter @nofx_official](https://x.com/nofx_official)
+- 💬 [Telegram Community](https://github.com/the-dev-z/alpha-trading/discussions)
+- 🐛 [GitHub Issues](https://github.com/the-dev-z/alpha-trading/issues)
+- 🐦 [Twitter @the-dev-z](https://github.com/the-dev-z/alpha-trading)
 
 ---
 

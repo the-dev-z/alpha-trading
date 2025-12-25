@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the NOFX project will be documented in this file.
+All notable changes to the Alpha Trading project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Complete System Redesign - Web-Based Configuration Platform**
 
-This is a **major breaking update** that completely transforms NOFX from a static config-based system to a modern web-based trading platform.
+This is a **major breaking update** that completely transforms Alpha Trading from a static config-based system to a modern web-based trading platform.
 
 #### Database-Driven Architecture
 - SQLite integration replacing static JSON config
@@ -196,7 +196,7 @@ When releasing a new version, move [Unreleased] items to a new version section w
 - [Documentation](docs/README.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
-- [GitHub Repository](https://github.com/NoFxAiOS/nofx)
+- [GitHub Repository](https://github.com/the-dev-z/alpha-trading)
 
 ---
 

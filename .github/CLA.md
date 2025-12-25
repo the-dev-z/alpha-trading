@@ -1,12 +1,12 @@
-# NOFX Contributor License Agreement
+# Alpha Trading Contributor License Agreement
 
-Thank you for your interest in contributing to NOFX. This Contributor License Agreement ("CLA") documents the rights granted by contributors to the Project.
+Thank you for your interest in contributing to Alpha Trading. This Contributor License Agreement ("CLA") documents the rights granted by contributors to the Project.
 
 ## 1. Definitions
 
 - **"Contribution"** means any code, documentation, or other original work submitted to the Project.
 - **"You"** means the individual or entity submitting the Contribution.
-- **"Project"** means NOFX (https://github.com/NoFxAiOS/nofx).
+- **"Project"** means Alpha Trading (https://github.com/the-dev-z/alpha-trading).
 
 ## 2. Grant of Rights
 

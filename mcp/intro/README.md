@@ -18,7 +18,7 @@
 ### 基础用法
 
 ```go
-import "nofx/mcp"
+import "alpha-trading/mcp"
 
 // 创建客户端
 client := mcp.NewClient(

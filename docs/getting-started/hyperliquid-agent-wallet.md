@@ -38,11 +38,11 @@ After creation, save these immediately:
 
 ⚠️ **Important**: The private key is only displayed once. Save it securely!
 
-## Step 4: Configure in NOFX
+## Step 4: Configure in Alpha Trading
 
-Add your agent wallet through the NOFX web interface:
+Add your agent wallet through the Alpha Trading web interface:
 
-1. Open NOFX dashboard (http://localhost:3000)
+1. Open Alpha Trading dashboard (http://localhost:3000)
 2. Go to **Exchange Configuration**
 3. Enable **Hyperliquid**
 4. Enter:
@@ -56,7 +56,7 @@ Add your agent wallet through the NOFX web interface:
 |-------|-------------|---------|
 | Main Wallet | Your connected wallet (holds funds) | `0xABC123...` |
 | Agent Wallet | Sub-wallet for trading | `0xDEF456...` |
-| Private Key | Only needed for NOFX | `abc123...` (no 0x) |
+| Private Key | Only needed for Alpha Trading | `abc123...` (no 0x) |
 
 ## Managing Your Agent
 
@@ -69,7 +69,7 @@ Add your agent wallet through the NOFX web interface:
 ### Create Multiple Agents
 
 You can create multiple agents for different purposes:
-- One for NOFX
+- One for Alpha Trading
 - One for other trading bots
 - One for manual API access
 

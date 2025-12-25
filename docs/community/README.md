@@ -1,6 +1,6 @@
-# 👥 NOFX Community
+# 👥 Alpha Trading Community
 
-Welcome to the NOFX community! This section contains everything you need to contribute and participate.
+Welcome to the Alpha Trading community! This section contains everything you need to contribute and participate.
 
 ---
 
@@ -28,14 +28,14 @@ We're introducing a new PR management system to improve code quality and make co
    - [Security Policy](../../SECURITY.md) - Report vulnerabilities
 
 2. **Find Something to Work On**
-   - Browse [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues)
+   - Browse [GitHub Issues](https://github.com/the-dev-z/alpha-trading/issues)
    - Look for `good first issue` label
    - Check out [bounty tasks](#-bounty-program)
 
 3. **Join the Community**
-   - 💬 [Telegram Developer Community](https://t.me/nofx_dev_community)
-   - 🐦 [Twitter @nofx_official](https://x.com/nofx_official)
-   - 🐙 [GitHub Discussions](https://github.com/NoFxAiOS/nofx/discussions)
+   - 💬 [Telegram Developer Community](https://github.com/the-dev-z/alpha-trading/discussions)
+   - 🐦 [Twitter @the-dev-z](https://github.com/the-dev-z/alpha-trading)
+   - 🐙 [GitHub Discussions](https://github.com/the-dev-z/alpha-trading/discussions)
 
 ---
 
@@ -43,7 +43,7 @@ We're introducing a new PR management system to improve code quality and make co
 
 ### Active Bounties
 
-NOFX offers bounties for valuable contributions:
+Alpha Trading offers bounties for valuable contributions:
 
 | Category | Reward Range | Examples |
 |----------|--------------|----------|
@@ -138,9 +138,9 @@ NOFX offers bounties for valuable contributions:
 
 | Platform | Purpose | Link |
 |----------|---------|------|
-| 💬 Telegram | Real-time chat, questions | [Join](https://t.me/nofx_dev_community) |
-| 🐙 GitHub | Issues, PRs, discussions | [Visit](https://github.com/NoFxAiOS/nofx) |
-| 🐦 Twitter | Announcements, updates | [@nofx_official](https://x.com/nofx_official) |
+| 💬 Telegram | Real-time chat, questions | [Join](https://github.com/the-dev-z/alpha-trading/discussions) |
+| 🐙 GitHub | Issues, PRs, discussions | [Visit](https://github.com/the-dev-z/alpha-trading) |
+| 🐦 Twitter | Announcements, updates | [@the-dev-z](https://github.com/the-dev-z/alpha-trading) |
 
 ### Core Team
 
@@ -167,7 +167,7 @@ NOFX offers bounties for valuable contributions:
 **Want to organize an event?**
 - Contact core team on Telegram
 - Propose in GitHub Discussions
-- Tweet and tag @nofx_official
+- Tweet and tag @the-dev-z
 
 ---
 
@@ -175,7 +175,7 @@ NOFX offers bounties for valuable contributions:
 
 ### For Contributors
 
-**Understanding NOFX:**
+**Understanding Alpha Trading:**
 - [System Architecture](../architecture/README.md) *(coming soon)*
 - [API Reference](../architecture/api-reference.md) *(coming soon)*
 - [Database Schema](../architecture/database-schema.md) *(coming soon)*
@@ -228,10 +228,10 @@ NOFX offers bounties for valuable contributions:
 
 | Metric | Count |
 |--------|-------|
-| GitHub Stars | Check [repo](https://github.com/NoFxAiOS/nofx) |
+| GitHub Stars | Check [repo](https://github.com/the-dev-z/alpha-trading) |
 | Contributors | 21+ |
-| Open Issues | Check [issues](https://github.com/NoFxAiOS/nofx/issues) |
-| Merged PRs | Check [pulls](https://github.com/NoFxAiOS/nofx/pulls?q=is%3Apr+is%3Amerged) |
+| Open Issues | Check [issues](https://github.com/the-dev-z/alpha-trading/issues) |
+| Merged PRs | Check [pulls](https://github.com/the-dev-z/alpha-trading/pulls?q=is%3Apr+is%3Amerged) |
 
 ---
 
@@ -240,7 +240,7 @@ NOFX offers bounties for valuable contributions:
 - **Want to contribute code?** → [Contributing Guide](../../CONTRIBUTING.md)
 - **Want to claim bounty?** → [Bounty Guide](bounty-guide.md)
 - **Found a security issue?** → [Security Policy](../../SECURITY.md)
-- **Have questions?** → [Telegram Community](https://t.me/nofx_dev_community)
+- **Have questions?** → [Telegram Community](https://github.com/the-dev-z/alpha-trading/discussions)
 
 ---
 

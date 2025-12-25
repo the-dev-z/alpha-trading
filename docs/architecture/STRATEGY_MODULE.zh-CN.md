@@ -1,10 +1,10 @@
-# NOFX 策略模块技术文档
+# Alpha Trading 策略模块技术文档
 
 **语言:** [English](STRATEGY_MODULE.md) | [中文](STRATEGY_MODULE.zh-CN.md)
 
 ## 概述
 
-本文档详细描述 NOFX 策略模块的完整数据流程，包括币种选择、数据组装、提示词构建、AI 请求、响应解析和决策执行。
+本文档详细描述 Alpha Trading 策略模块的完整数据流程，包括币种选择、数据组装、提示词构建、AI 请求、响应解析和决策执行。
 
 ---
 

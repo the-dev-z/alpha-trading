@@ -2,7 +2,7 @@
 
 ## What Changed?
 
-NOFX documentation has been reorganized into a structured `docs/` directory for better organization and navigation.
+Alpha Trading documentation has been reorganized into a structured `docs/` directory for better organization and navigation.
 
 ## 🗺️ File Locations (Old → New)
 
@@ -143,7 +143,7 @@ Files GitHub needs to see:
 ```
 
 **GitHub URLs automatically redirect!**
-- Old: `github.com/NoFxAiOS/nofx/blob/main/DOCKER_DEPLOY.en.md`
+- Old: `github.com/the-dev-z/alpha-trading/blob/main/DOCKER_DEPLOY.en.md`
 - Will redirect to: `github.com/.../docs/getting-started/docker-deploy.en.md`
 
 ## 🛠️ For Contributors
@@ -221,10 +221,10 @@ Closes #XXX
 **Can't find a document?**
 1. Check [docs/README.md](README.md) navigation hub
 2. Search GitHub repo
-3. Ask in [Telegram](https://t.me/nofx_dev_community)
+3. Ask in [Telegram](https://github.com/the-dev-z/alpha-trading/discussions)
 
 **Link broken?**
-- Report in [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues)
+- Report in [GitHub Issues](https://github.com/the-dev-z/alpha-trading/issues)
 - We'll fix it ASAP!
 
 **Want to contribute docs?**

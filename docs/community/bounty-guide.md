@@ -6,7 +6,7 @@
 
 1. **访问项目 Issues 页面**
    ```
-   https://github.com/NoFxAiOS/nofx/issues
+   https://github.com/the-dev-z/alpha-trading/issues
    ```
 
 2. **点击 "New Issue" 按钮**
@@ -114,7 +114,7 @@ gh issue create \
 ```
 🚀 $500 Bounty! 🚀
 
-Looking for devs to integrate Hyperliquid exchange into NOFX AI Trading System
+Looking for devs to integrate Hyperliquid exchange into Alpha Trading AI Trading System
 
 ✅ Add perpetual contracts support
 ✅ Unified API interface
@@ -127,7 +127,7 @@ Details: [详情链接]
 ```
 
 **Telegram:**
-- 在 NOFX 开发者社区发布：https://t.me/nofx_dev_community
+- 在 Alpha Trading 开发者社区发布：https://github.com/the-dev-z/alpha-trading/discussions
 - 在相关的开发者群组分享
 
 ### 2. 开发者社区
@@ -215,8 +215,8 @@ Details: [详情链接]
 
 ## 📞 需要帮助？
 
-- **GitHub Issues**: https://github.com/NoFxAiOS/nofx/issues
-- **Telegram**: https://t.me/nofx_dev_community
+- **GitHub Issues**: https://github.com/the-dev-z/alpha-trading/issues
+- **Telegram**: https://github.com/the-dev-z/alpha-trading/discussions
 - **Twitter/X**: [@Web3Tinkle](https://x.com/Web3Tinkle)
 
 ---

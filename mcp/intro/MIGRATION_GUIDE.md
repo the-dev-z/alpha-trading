@@ -284,7 +284,7 @@ package mypackage_test
 import (
     "testing"
     "github.com/stretchr/testify/assert"
-    "nofx/mcp"
+    "alpha-trading/mcp"
 )
 
 type MockHTTPClient struct {

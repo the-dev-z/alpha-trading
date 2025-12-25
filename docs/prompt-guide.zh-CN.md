@@ -1246,7 +1246,7 @@ reasoning 字段保持简短（10-20字），用关键词概括决策理由
 **步骤1: 查看实际输出**
 ```bash
 # 查看系统日志，找到实际发送给 AI 的 Prompt
-docker logs nofx-trader | grep "User Prompt"
+docker logs alpha-trading | grep "User Prompt"
 ```
 
 **步骤2: 确认字段存在**
@@ -1392,7 +1392,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 **排查步骤**:
 1. 查看日志中的 AI 原始输出
    ```bash
-   docker logs nofx-trader | tail -100
+   docker logs alpha-trading | tail -100
    ```
 2. 检查是否使用了 XML 标签 `<reasoning>` 和 `<decision>`
 3. 检查 JSON 格式是否正确
@@ -1417,7 +1417,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 **排查步骤**:
 1. 查看具体的验证错误信息
    ```bash
-   docker logs nofx-trader | grep "验证失败"
+   docker logs alpha-trading | grep "验证失败"
    ```
 2. 检查是否违反硬约束
 
@@ -1446,7 +1446,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 **排查步骤**:
 1. 查看 AI 的思维链分析（reasoning）
    ```bash
-   docker logs nofx-trader | grep -A 20 "<reasoning>"
+   docker logs alpha-trading | grep -A 20 "<reasoning>"
    ```
 2. 检查 Prompt 是否有歧义
 3. 检查市场数据是否符合你的开仓条件
@@ -1482,7 +1482,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 
 ### 官方资源
 
-- **GitHub Issues**: https://github.com/NoFxAiOS/nofx/issues
+- **GitHub Issues**: https://github.com/the-dev-z/alpha-trading/issues
 - **官方文档**: 查看项目 README
 - **社区讨论**: GitHub Discussions
 

@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug to help us improve NOFX
+about: Report a bug to help us improve Alpha Trading
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -95,7 +95,7 @@ Paste backend logs here (last 50-100 lines around the error)
 
 **Backend:**
 - **Go Version:** [run: `go version`]
-- **NOFX Version:** [run: `git log -1 --oneline` or check release tag]
+- **Alpha Trading Version:** [run: `git log -1 --oneline` or check release tag]
 
 **Frontend:**
 - **Browser:** [e.g. Chrome 120, Firefox 121, Safari 17]

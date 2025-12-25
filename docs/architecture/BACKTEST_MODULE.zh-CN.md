@@ -1,10 +1,10 @@
-# NOFX 回测模块技术文档
+# Alpha Trading 回测模块技术文档
 
 **语言:** [English](BACKTEST_MODULE.md) | [中文](BACKTEST_MODULE.zh-CN.md)
 
 ## 概述
 
-本文档详细描述 NOFX 回测模块的完整技术实现，包括配置、历史数据加载、模拟引擎、AI 决策、性能指标计算和结果存储。
+本文档详细描述 Alpha Trading 回测模块的完整技术实现，包括配置、历史数据加载、模拟引擎、AI 决策、性能指标计算和结果存储。
 
 ---
 

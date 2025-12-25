@@ -1,14 +1,14 @@
-# 📚 NOFX Documentation Center / 文档中心
+# 📚 Alpha Trading Documentation Center / 文档中心
 
-Welcome to the NOFX documentation! This page helps you find the right documentation quickly.
+Welcome to the Alpha Trading documentation! This page helps you find the right documentation quickly.
 
-欢迎来到 NOFX 文档中心！本页面帮助您快速找到所需文档。
+欢迎来到 Alpha Trading 文档中心！本页面帮助您快速找到所需文档。
 
 ---
 
 ## 🚀 Getting Started / 快速开始
 
-**New to NOFX? Start here!**
+**New to Alpha Trading? Start here!**
 
 | Document | Description | 描述 |
 |----------|-------------|------|
@@ -29,7 +29,7 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 
 ## 📘 User Guides / 使用指南
 
-**Learn how to use NOFX effectively**
+**Learn how to use Alpha Trading effectively**
 
 | Document | Description | 描述 |
 |----------|-------------|------|
@@ -56,9 +56,9 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 | [Aster Bounty](community/bounty-aster.md) | Aster DEX integration bounty | Aster DEX 集成悬赏 |
 
 **Get Involved:**
-- 💬 [Telegram Community](https://t.me/nofx_dev_community)
-- 🐦 [Twitter @nofx_official](https://x.com/nofx_official)
-- 🐛 [Report Issues](https://github.com/NoFxAiOS/nofx/issues)
+- 💬 [Telegram Community](https://github.com/the-dev-z/alpha-trading/discussions)
+- 🐦 [Twitter @the-dev-z](https://github.com/the-dev-z/alpha-trading)
+- 🐛 [Report Issues](https://github.com/the-dev-z/alpha-trading/issues)
 
 ---
 
@@ -91,7 +91,7 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 
 ## 🗺️ Roadmap / 路线图
 
-**NOFX's strategic development plan and market expansion**
+**Alpha Trading's strategic development plan and market expansion**
 
 | Document | Description | 描述 |
 |----------|-------------|------|
@@ -122,12 +122,12 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 
 ### I want to...
 - 🚀 **Get started quickly** → [Getting Started](getting-started/README.md) / [快速开始](getting-started/README.zh-CN.md)
-- 🐛 **Report a bug** → [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues/new)
-- 💡 **Suggest a feature** → [Feature Request](https://github.com/NoFxAiOS/nofx/issues/new?template=feature_request.md)
+- 🐛 **Report a bug** → [GitHub Issues](https://github.com/the-dev-z/alpha-trading/issues/new)
+- 💡 **Suggest a feature** → [Feature Request](https://github.com/the-dev-z/alpha-trading/issues/new?template=feature_request.md)
 - 🔒 **Report security issue** → [Security Policy](../SECURITY.md)
 - 💰 **Claim a bounty** → [Bounty Guide](community/bounty-guide.md)
 - 🤝 **Contribute code** → [Contributing Guide](../CONTRIBUTING.md)
-- 💬 **Ask questions** → [Telegram Community](https://t.me/nofx_dev_community)
+- 💬 **Ask questions** → [Telegram Community](https://github.com/the-dev-z/alpha-trading/discussions)
 
 ### I'm looking for...
 - 🏗️ **System architecture** → [Architecture (EN)](architecture/README.md) / [架构文档](architecture/README.zh-CN.md)
@@ -163,9 +163,9 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 **Can't find what you're looking for?**
 
 1. **Search GitHub Issues** - Someone might have asked already
-2. **Join Telegram** - [NOFX Developer Community](https://t.me/nofx_dev_community)
-3. **Ask on Twitter** - Mention [@nofx_official](https://x.com/nofx_official)
-4. **Create an Issue** - [New Issue](https://github.com/NoFxAiOS/nofx/issues/new)
+2. **Join Telegram** - [Alpha Trading Developer Community](https://github.com/the-dev-z/alpha-trading/discussions)
+3. **Ask on Twitter** - Mention [@the-dev-z](https://github.com/the-dev-z/alpha-trading)
+4. **Create an Issue** - [New Issue](https://github.com/the-dev-z/alpha-trading/issues/new)
 
 ---
 
@@ -186,4 +186,4 @@ Found an error or want to improve the docs?
 ---
 
 **Last Updated:** 2025-11-01
-**Maintained by:** [NOFX Community](https://github.com/NoFxAiOS)
+**Maintained by:** [Alpha Trading Community](https://github.com/NoFxAiOS)

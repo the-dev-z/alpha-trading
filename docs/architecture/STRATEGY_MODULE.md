@@ -1,10 +1,10 @@
-# NOFX Strategy Module - Technical Documentation
+# Alpha Trading Strategy Module - Technical Documentation
 
 **Language:** [English](STRATEGY_MODULE.md) | [中文](STRATEGY_MODULE.zh-CN.md)
 
 ## Overview
 
-This document describes the complete data flow of the NOFX strategy module, including coin selection, data assembly, prompt construction, AI request, response parsing, and decision execution.
+This document describes the complete data flow of the Alpha Trading strategy module, including coin selection, data assembly, prompt construction, AI request, response parsing, and decision execution.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## 功能说明
 
-现在 NOFX 支持使用任何 OpenAI 格式兼容的 API，包括：
+现在 Alpha Trading 支持使用任何 OpenAI 格式兼容的 API，包括：
 - OpenAI 官方 API (gpt-4o, gpt-4-turbo 等)
 - OpenRouter (可访问多种模型)
 - 本地部署的模型 (Ollama, LM Studio 等)

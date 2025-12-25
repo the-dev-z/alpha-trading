@@ -1,8 +1,8 @@
-# 🤝 Contributing to NOFX
+# 🤝 Contributing to Alpha Trading
 
 **Language:** [English](CONTRIBUTING.md) | [中文](docs/i18n/zh-CN/CONTRIBUTING.md)
 
-Thank you for your interest in contributing to NOFX! This document provides guidelines and workflows for contributing to the project.
+Thank you for your interest in contributing to Alpha Trading! This document provides guidelines and workflows for contributing to the project.
 
 ---
 
@@ -85,7 +85,7 @@ git clone https://github.com/YOUR_USERNAME/nofx.git
 cd nofx
 
 # Add upstream remote
-git remote add upstream https://github.com/NoFxAiOS/nofx.git
+git remote add upstream https://github.com/the-dev-z/alpha-trading.git
 ```
 
 ### 2. Create a Feature Branch
@@ -312,7 +312,7 @@ const TC = (props) => {
 ### File Structure
 
 ```
-NOFX/
+Alpha Trading/
 ├── cmd/               # Main applications
 ├── internal/          # Private code
 │   ├── exchange/      # Exchange adapters
@@ -440,7 +440,7 @@ Reviewers will check:
 
 ### How It Works
 
-1. Check [open bounty issues](https://github.com/NoFxAiOS/nofx/labels/bounty)
+1. Check [open bounty issues](https://github.com/the-dev-z/alpha-trading/labels/bounty)
 2. Comment to claim (first come, first served)
 3. Complete work within deadline
 4. Submit PR with bounty claim section filled
@@ -458,8 +458,8 @@ Reviewers will check:
 
 ## ❓ Questions?
 
-- **General questions:** Join our [Telegram Community](https://t.me/nofx_dev_community)
-- **Technical questions:** Open a [Discussion](https://github.com/NoFxAiOS/nofx/discussions)
+- **General questions:** Join our [Telegram Community](https://github.com/the-dev-z/alpha-trading/discussions)
+- **Technical questions:** Open a [Discussion](https://github.com/the-dev-z/alpha-trading/discussions)
 - **Security issues:** See [Security Policy](SECURITY.md)
 - **Bug reports:** Use [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md)
 
@@ -475,6 +475,6 @@ Reviewers will check:
 
 ## 🙏 Thank You!
 
-Your contributions make NOFX better for everyone. We appreciate your time and effort!
+Your contributions make Alpha Trading better for everyone. We appreciate your time and effort!
 
 **Happy coding! 🚀**

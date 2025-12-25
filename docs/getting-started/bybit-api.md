@@ -1,6 +1,6 @@
 # Bybit API Setup Guide
 
-This guide explains how to create and configure Bybit API keys for use with NOFX.
+This guide explains how to create and configure Bybit API keys for use with Alpha Trading.
 
 ## Create API Key
 
@@ -9,7 +9,7 @@ This guide explains how to create and configure Bybit API keys for use with NOFX
 3. Click **Create New Key**
 4. Select **System-generated API Keys**
 5. Complete 2FA verification
-6. Name your API key (e.g., "NOFX Trading")
+6. Name your API key (e.g., "Alpha Trading Trading")
 
 ## Configure API Permissions
 
@@ -35,11 +35,11 @@ After creation, you'll see:
 
 ⚠️ **Important**: Save the API Secret immediately - it's only shown once!
 
-## Configure in NOFX
+## Configure in Alpha Trading
 
-Add your API credentials through the NOFX web interface:
+Add your API credentials through the Alpha Trading web interface:
 
-1. Open NOFX dashboard (http://localhost:3000)
+1. Open Alpha Trading dashboard (http://localhost:3000)
 2. Go to **Exchange Configuration**
 3. Enable **Bybit**
 4. Enter your API Key and API Secret

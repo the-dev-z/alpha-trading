@@ -69,7 +69,7 @@ reported to the community leaders responsible for enforcement at:
 
 
 You can also report via:
-- **Twitter:** DM to [@nofx_official](https://x.com/nofx_official)
+- **Twitter:** DM to [@the-dev-z](https://github.com/the-dev-z/alpha-trading)
 
 All complaints will be reviewed and investigated promptly and fairly.
 
@@ -185,7 +185,7 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 
 您也可以通过以下方式报告：
-- **Twitter:** 私信 [@nofx_official](https://x.com/nofx_official)
+- **Twitter:** 私信 [@the-dev-z](https://github.com/the-dev-z/alpha-trading)
 
 所有投诉都将得到迅速和公正的审查和调查。
 

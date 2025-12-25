@@ -1,10 +1,10 @@
-# NOFX Backtest Module - Technical Documentation
+# Alpha Trading Backtest Module - Technical Documentation
 
 **Language:** [English](BACKTEST_MODULE.md) | [中文](BACKTEST_MODULE.zh-CN.md)
 
 ## Overview
 
-This document describes the complete technical implementation of the NOFX backtest module, including configuration, historical data loading, simulation engine, AI decision making, performance metrics calculation, and result storage.
+This document describes the complete technical implementation of the Alpha Trading backtest module, including configuration, historical data loading, simulation engine, AI decision making, performance metrics calculation, and result storage.
 
 ---
 

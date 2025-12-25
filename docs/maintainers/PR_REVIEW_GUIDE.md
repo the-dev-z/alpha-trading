@@ -2,7 +2,7 @@
 
 **Language:** [English](PR_REVIEW_GUIDE.md) | [中文](PR_REVIEW_GUIDE.zh-CN.md)
 
-This guide is for NOFX maintainers reviewing pull requests.
+This guide is for Alpha Trading maintainers reviewing pull requests.
 
 ---
 

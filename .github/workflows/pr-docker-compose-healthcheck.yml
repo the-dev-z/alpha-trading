@@ -28,9 +28,9 @@ jobs:
         run: |
           cat > .env <<EOF
           # Minimal config for healthcheck testing
-          NOFX_BACKEND_PORT=8080
-          NOFX_FRONTEND_PORT=3000
-          NOFX_TIMEZONE=UTC
+          ALPHA_BACKEND_PORT=8080
+          ALPHA_FRONTEND_PORT=3000
+          ALPHA_TIMEZONE=UTC
           DATA_ENCRYPTION_KEY=test-key-32-chars-minimum-length
           JWT_SECRET=test-jwt-secret-minimum-32-chars
           EOF

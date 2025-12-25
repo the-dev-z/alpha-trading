@@ -6,19 +6,19 @@
 
 ## 基础问题
 
-### NOFX 是什么？
-NOFX 是一个 AI 驱动的加密货币交易机器人，使用大语言模型（LLM）在期货市场进行交易决策。
+### Alpha Trading 是什么？
+Alpha Trading 是一个 AI 驱动的加密货币交易机器人，使用大语言模型（LLM）在期货市场进行交易决策。
 
 ### 支持哪些交易所？
 - ✅ 币安合约（Binance Futures）
 - ✅ Hyperliquid
 - 🚧 更多交易所开发中
 
-### NOFX 能盈利吗？
+### Alpha Trading 能盈利吗？
 AI 交易是**实验性**的，**不保证盈利**。请始终用小额资金测试，不要投入超过您承受能力的资金。
 
 ### 可以同时运行多个交易员吗？
-可以！NOFX 支持运行多个交易员，每个可配置不同的 AI 模型和交易策略。
+可以！Alpha Trading 支持运行多个交易员，每个可配置不同的 AI 模型和交易策略。
 
 ---
 
@@ -31,14 +31,14 @@ AI 交易是**实验性**的，**不保证盈利**。请始终用小额资金测
 - **网络**：稳定的互联网连接
 
 ### 需要编程经验吗？
-不需要！NOFX 有 Web 界面进行所有配置。但基础的命令行知识有助于安装和故障排查。
+不需要！Alpha Trading 有 Web 界面进行所有配置。但基础的命令行知识有助于安装和故障排查。
 
 ### 如何获取 API 密钥？
 1. **币安**：账户 → API 管理 → 创建 API → 启用合约
 2. **Hyperliquid**：访问 [Hyperliquid App](https://app.hyperliquid.xyz/) → API 设置
 
 ### 应该使用子账户吗？
-**推荐**：是的，使用专门的子账户运行 NOFX 可以更好地隔离风险。但请注意，某些子账户有限制（例如币安子账户最高 5 倍杠杆）。
+**推荐**：是的，使用专门的子账户运行 Alpha Trading 可以更好地隔离风险。但请注意，某些子账户有限制（例如币安子账户最高 5 倍杠杆）。
 
 ---
 
@@ -78,9 +78,9 @@ AI 交易是**实验性**的，**不保证盈利**。请始终用小额资金测
 3. 选择 **持仓模式** → **双向持仓**
 4. ⚠️ 先平掉所有持仓
 
-**原因**：NOFX 使用 `PositionSide(LONG/SHORT)`，需要双向持仓模式。
+**原因**：Alpha Trading 使用 `PositionSide(LONG/SHORT)`，需要双向持仓模式。
 
-参见 [Issue #202](https://github.com/NoFxAiOS/nofx/issues/202) 和[故障排查指南](TROUBLESHOOTING.zh-CN.md#-只开空单-issue-202)。
+参见 [Issue #202](https://github.com/the-dev-z/alpha-trading/issues/202) 和[故障排查指南](TROUBLESHOOTING.zh-CN.md#-只开空单-issue-202)。
 
 ---
 
@@ -92,7 +92,7 @@ AI 交易是**实验性**的，**不保证盈利**。请始终用小额资金测
 lsof -i :8080
 
 # 修改 .env 中的端口
-NOFX_BACKEND_PORT=8081
+ALPHA_BACKEND_PORT=8081
 ```
 
 ---
@@ -115,7 +115,7 @@ curl http://localhost:8080/api/health
 
 **解决方法**：
 ```bash
-# 停止所有 NOFX 进程
+# 停止所有 Alpha Trading 进程
 docker compose down
 # 或
 pkill nofx
@@ -145,7 +145,7 @@ docker compose up -d
 可以！每个交易员可以使用不同的 AI 模型。您甚至可以 A/B 测试不同模型。
 
 ### AI 会从错误中学习吗？
-会的，在一定程度上。NOFX 在每次决策提示中提供历史表现反馈，允许 AI 调整策略。
+会的，在一定程度上。Alpha Trading 在每次决策提示中提供历史表现反馈，允许 AI 调整策略。
 
 ---
 
@@ -178,19 +178,19 @@ docker compose exec postgres \
 
 ### 如何报告 Bug？
 1. 先查看[故障排查指南](TROUBLESHOOTING.zh-CN.md)
-2. 搜索[现有 Issues](https://github.com/NoFxAiOS/nofx/issues)
+2. 搜索[现有 Issues](https://github.com/the-dev-z/alpha-trading/issues)
 3. 如果没找到，使用我们的 [Bug 报告模板](../../.github/ISSUE_TEMPLATE/bug_report.md)
 
 ### 在哪里可以获得帮助？
-- [GitHub Discussions](https://github.com/NoFxAiOS/nofx/discussions)
-- [Telegram 社区](https://t.me/nofx_dev_community)
-- [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues)
+- [GitHub Discussions](https://github.com/the-dev-z/alpha-trading/discussions)
+- [Telegram 社区](https://github.com/the-dev-z/alpha-trading/discussions)
+- [GitHub Issues](https://github.com/the-dev-z/alpha-trading/issues)
 
 ---
 
 ## 贡献
 
-### 可以为 NOFX 贡献代码吗？
+### 可以为 Alpha Trading 贡献代码吗？
 可以！我们欢迎贡献：
 - Bug 修复和新功能
 - 文档改进
@@ -198,7 +198,7 @@ docker compose exec postgres \
 - 查看[贡献指南](../CONTRIBUTING.md)
 
 ### 如何建议新功能？
-提交 [Feature Request](https://github.com/NoFxAiOS/nofx/issues/new/choose) 说明您的想法！
+提交 [Feature Request](https://github.com/the-dev-z/alpha-trading/issues/new/choose) 说明您的想法！
 
 ---
 

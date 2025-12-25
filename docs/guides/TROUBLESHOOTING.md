@@ -226,7 +226,7 @@ docker info | grep -A 10 "Registry Mirrors"
 # Should show your configured mirrors
 ```
 
-**Related Issue:** [#168](https://github.com/NoFxAiOS/nofx/issues/168)
+**Related Issue:** [#168](https://github.com/the-dev-z/alpha-trading/issues/168)
 
 ---
 
@@ -242,7 +242,7 @@ lsof -i :8080
 netstat -tulpn | grep 8080
 
 # Kill the process or change port in .env
-NOFX_BACKEND_PORT=8081
+ALPHA_BACKEND_PORT=8081
 ```
 
 ---
@@ -330,7 +330,7 @@ If errors persist after time sync:
    - Login to Binance → API Management
    - Delete old key
    - Create new key
-   - Update NOFX configuration
+   - Update Alpha Trading configuration
 
 **Solution 3: Check Rate Limits**
 
@@ -340,7 +340,7 @@ Binance has strict API rate limits:
 - Reduce number of traders
 - Increase decision interval (e.g., from 1min to 3-5min)
 
-**Related Issue:** [#60](https://github.com/NoFxAiOS/nofx/issues/60)
+**Related Issue:** [#60](https://github.com/the-dev-z/alpha-trading/issues/60)
 
 ---
 
@@ -387,7 +387,7 @@ Binance has strict API rate limits:
 
 **Solution:**
 ```bash
-# Stop all NOFX processes
+# Stop all Alpha Trading processes
 docker compose down
 # OR
 pkill nofx
@@ -558,8 +558,8 @@ If you've tried all the above and still have problems:
    - Describe what you've already tried
 
 3. **Join Community:**
-   - [Telegram Developer Community](https://t.me/nofx_dev_community)
-   - [GitHub Discussions](https://github.com/NoFxAiOS/nofx/discussions)
+   - [Telegram Developer Community](https://github.com/the-dev-z/alpha-trading/discussions)
+   - [GitHub Discussions](https://github.com/the-dev-z/alpha-trading/discussions)
 
 ---
 

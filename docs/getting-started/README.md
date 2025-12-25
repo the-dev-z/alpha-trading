@@ -1,8 +1,8 @@
-# 🚀 Getting Started with NOFX
+# 🚀 Getting Started with Alpha Trading
 
 **Language:** [English](README.md) | [中文](README.zh-CN.md)
 
-This section contains all the documentation you need to get NOFX up and running.
+This section contains all the documentation you need to get Alpha Trading up and running.
 
 ## 📋 Deployment Options
 
@@ -81,7 +81,7 @@ For single-tenant/self-hosted usage, you can enable strict admin-only access:
 }
 ```
 2) Set environment variables (Docker compose already wired):
-- `NOFX_ADMIN_PASSWORD` — admin password (plaintext; hashed on startup)
+- `ALPHA_ADMIN_PASSWORD` — admin password (plaintext; hashed on startup)
 
 3) Login at `/login` using the admin password. All non-essential endpoints are blocked to unauthenticated users while admin mode is enabled.
 
@@ -114,8 +114,8 @@ For single-tenant/self-hosted usage, you can enable strict admin-only access:
 
 **Need more help?**
 - 📖 [FAQ](../guides/faq.zh-CN.md)
-- 💬 [Telegram Community](https://t.me/nofx_dev_community)
-- 🐛 [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues)
+- 💬 [Telegram Community](https://github.com/the-dev-z/alpha-trading/discussions)
+- 🐛 [GitHub Issues](https://github.com/the-dev-z/alpha-trading/issues)
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Language:** [English](PROJECT_MANAGEMENT.md) | [中文](PROJECT_MANAGEMENT.zh-CN.md)
 
-This guide explains how we manage the NOFX project, track progress, and prioritize work.
+This guide explains how we manage the Alpha Trading project, track progress, and prioritize work.
 
 ---
 
@@ -12,7 +12,7 @@ This guide explains how we manage the NOFX project, track progress, and prioriti
 
 We use **GitHub Projects (Beta)** with these boards:
 
-#### 1. **NOFX Development Board**
+#### 1. **Alpha Trading Development Board**
 
 **Columns:**
 ```
@@ -316,10 +316,10 @@ We use GitHub Actions for automation:
 
 ### External (Community)
 
-- **Telegram:** [@nofx_dev_community](https://t.me/nofx_dev_community)
+- **Telegram:** [@nofx_dev_community](https://github.com/the-dev-z/alpha-trading/discussions)
 - **GitHub Issues:** Bug reports, feature requests
 - **GitHub Discussions:** General questions, ideas
-- **Twitter:** [@nofx_official](https://x.com/nofx_official) - Announcements
+- **Twitter:** [@the-dev-z](https://github.com/the-dev-z/alpha-trading) - Announcements
 
 ---
 

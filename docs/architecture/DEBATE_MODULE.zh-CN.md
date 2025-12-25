@@ -1,4 +1,4 @@
-# NOFX 辩论竞技场模块 - 技术文档
+# Alpha Trading 辩论竞技场模块 - 技术文档
 
 **语言:** [English](DEBATE_MODULE.md) | [中文](DEBATE_MODULE.zh-CN.md)
 

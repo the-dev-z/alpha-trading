@@ -8,13 +8,13 @@
 
 ### Important Legal Disclaimer
 
-**PLEASE READ THIS DISCLAIMER CAREFULLY BEFORE USING NOFX.**
+**PLEASE READ THIS DISCLAIMER CAREFULLY BEFORE USING Alpha Trading.**
 
-By using NOFX (the "Software"), you acknowledge that you have read, understood, and agree to be bound by this disclaimer. If you do not agree with any part of this disclaimer, you should not use the Software.
+By using Alpha Trading (the "Software"), you acknowledge that you have read, understood, and agree to be bound by this disclaimer. If you do not agree with any part of this disclaimer, you should not use the Software.
 
 ### 1. No Financial Advice
 
-NOFX is an **experimental software tool** for educational and research purposes only. Nothing contained in this Software should be construed as:
+Alpha Trading is an **experimental software tool** for educational and research purposes only. Nothing contained in this Software should be construed as:
 
 - ❌ Financial advice
 - ❌ Investment advice
@@ -27,7 +27,7 @@ NOFX is an **experimental software tool** for educational and research purposes 
 
 ### 2. Experimental Nature
 
-NOFX is an **experimental AI-powered trading system** that:
+Alpha Trading is an **experimental AI-powered trading system** that:
 
 - ⚠️ Uses artificial intelligence which may make unpredictable decisions
 - ⚠️ Is still under active development
@@ -97,7 +97,7 @@ THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIE
 
 TO THE MAXIMUM EXTENT PERMITTED BY LAW:
 
-- 🚫 The developers and contributors of NOFX shall **NOT** be liable for any damages arising from the use of this Software
+- 🚫 The developers and contributors of Alpha Trading shall **NOT** be liable for any damages arising from the use of this Software
 - 🚫 This includes but is not limited to: direct, indirect, incidental, special, consequential, or punitive damages
 - 🚫 This includes loss of profits, loss of data, loss of funds, or any other commercial damages or losses
 
@@ -105,7 +105,7 @@ TO THE MAXIMUM EXTENT PERMITTED BY LAW:
 
 ### 6. User Responsibility
 
-By using NOFX, you acknowledge and agree that:
+By using Alpha Trading, you acknowledge and agree that:
 
 - ✅ You are solely responsible for your trading decisions
 - ✅ You are solely responsible for securing your API keys and private keys
@@ -121,7 +121,7 @@ By using NOFX, you acknowledge and agree that:
 - 📋 You may need to register with financial authorities or obtain licenses
 - 💵 You are responsible for reporting and paying any applicable taxes
 
-**Using NOFX does not guarantee regulatory compliance.**
+**Using Alpha Trading does not guarantee regulatory compliance.**
 
 ### 8. No Professional Relationship
 
@@ -146,7 +146,7 @@ We **strongly recommend** that you:
 
 ### 10. Open Source Software
 
-NOFX is open source software licensed under AGPL-3.0:
+Alpha Trading is open source software licensed under AGPL-3.0:
 
 - 📖 You can review the source code
 - 🔧 You can modify the code at your own risk
@@ -157,7 +157,7 @@ NOFX is open source software licensed under AGPL-3.0:
 
 ### 11. Third-Party Services
 
-NOFX integrates with third-party services (exchanges, AI APIs):
+Alpha Trading integrates with third-party services (exchanges, AI APIs):
 
 - 🔗 We are not responsible for third-party service outages
 - 🔗 We are not responsible for third-party data accuracy
@@ -184,13 +184,13 @@ For legal inquiries, contact:
 
 ### 重要法律免责声明
 
-**使用NOFX前请仔细阅读本免责声明。**
+**使用Alpha Trading前请仔细阅读本免责声明。**
 
-使用NOFX（"本软件"）即表示您已阅读、理解并同意受本免责声明约束。如果您不同意本免责声明的任何部分，请勿使用本软件。
+使用Alpha Trading（"本软件"）即表示您已阅读、理解并同意受本免责声明约束。如果您不同意本免责声明的任何部分，请勿使用本软件。
 
 ### 1. 非财务建议
 
-NOFX是一个**实验性软件工具**，仅用于教育和研究目的。本软件中的任何内容都不应被解释为：
+Alpha Trading是一个**实验性软件工具**，仅用于教育和研究目的。本软件中的任何内容都不应被解释为：
 
 - ❌ 财务建议
 - ❌ 投资建议
@@ -203,7 +203,7 @@ NOFX是一个**实验性软件工具**，仅用于教育和研究目的。本软
 
 ### 2. 实验性质
 
-NOFX是一个**实验性的AI驱动交易系统**：
+Alpha Trading是一个**实验性的AI驱动交易系统**：
 
 - ⚠️ 使用可能做出不可预测决策的人工智能
 - ⚠️ 仍在积极开发中
@@ -273,7 +273,7 @@ NOFX是一个**实验性的AI驱动交易系统**：
 
 在法律允许的最大范围内：
 
-- 🚫 NOFX的开发者和贡献者**不对**因使用本软件而产生的任何损害承担责任
+- 🚫 Alpha Trading的开发者和贡献者**不对**因使用本软件而产生的任何损害承担责任
 - 🚫 这包括但不限于：直接、间接、偶然、特殊、后果性或惩罚性损害
 - 🚫 这包括利润损失、数据损失、资金损失或任何其他商业损害或损失
 
@@ -281,7 +281,7 @@ NOFX是一个**实验性的AI驱动交易系统**：
 
 ### 6. 用户责任
 
-使用NOFX即表示您承认并同意：
+使用Alpha Trading即表示您承认并同意：
 
 - ✅ 您对自己的交易决策承担全部责任
 - ✅ 您对保护API密钥和私钥承担全部责任
@@ -297,7 +297,7 @@ NOFX是一个**实验性的AI驱动交易系统**：
 - 📋 您可能需要向金融机构注册或获得许可
 - 💵 您有责任申报和缴纳任何适用的税款
 
-**使用NOFX并不保证合规性。**
+**使用Alpha Trading并不保证合规性。**
 
 ### 8. 无专业关系
 
@@ -322,7 +322,7 @@ NOFX是一个**实验性的AI驱动交易系统**：
 
 ### 10. 开源软件
 
-NOFX是根据AGPL-3.0许可的开源软件：
+Alpha Trading是根据AGPL-3.0许可的开源软件：
 
 - 📖 您可以查看源代码
 - 🔧 您可以自行修改代码，风险自负
@@ -333,7 +333,7 @@ NOFX是根据AGPL-3.0许可的开源软件：
 
 ### 11. 第三方服务
 
-NOFX集成了第三方服务（交易所、AI API）：
+Alpha Trading集成了第三方服务（交易所、AI API）：
 
 - 🔗 我们不对第三方服务中断负责
 - 🔗 我们不对第三方数据准确性负责
@@ -385,11 +385,11 @@ NOFX集成了第三方服务（交易所、AI API）：
 If you have questions about this disclaimer:
 - Read the [Security Policy](.github/SECURITY.md)
 - Read the [Contributing Guidelines](CONTRIBUTING.md)
-- Join our [Telegram Community](https://t.me/nofx_dev_community)
-- Contact via [Twitter](https://x.com/nofx_official)
+- Join our [Telegram Community](https://github.com/the-dev-z/alpha-trading/discussions)
+- Contact via [Twitter](https://github.com/the-dev-z/alpha-trading)
 
 ---
 
-**BY USING NOFX, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO THIS DISCLAIMER.**
+**BY USING Alpha Trading, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO THIS DISCLAIMER.**
 
-**使用NOFX即表示您已阅读、理解并同意本免责声明。**
+**使用Alpha Trading即表示您已阅读、理解并同意本免责声明。**

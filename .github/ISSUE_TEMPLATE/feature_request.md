@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature for NOFX
+about: Suggest a new feature for Alpha Trading
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''

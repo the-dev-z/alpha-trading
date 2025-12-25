@@ -40,11 +40,11 @@ After creation, save these immediately:
 
 ⚠️ **Important**: The private key is only shown once! Save it securely.
 
-## Step 4: Configure in NOFX
+## Step 4: Configure in Alpha Trading
 
-Add your agent wallet through the NOFX web interface:
+Add your agent wallet through the Alpha Trading web interface:
 
-1. Open NOFX dashboard (http://localhost:3000)
+1. Open Alpha Trading dashboard (http://localhost:3000)
 2. Go to **Exchange Configuration**
 3. Enable **Lighter**
 4. Enter:

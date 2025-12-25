@@ -2,7 +2,7 @@
 
 **语言：** [English](PROJECT_MANAGEMENT.md) | [中文](PROJECT_MANAGEMENT.zh-CN.md)
 
-本指南解释了我们如何管理 NOFX 项目、跟踪进度和优先级排序。
+本指南解释了我们如何管理 Alpha Trading 项目、跟踪进度和优先级排序。
 
 ---
 
@@ -12,7 +12,7 @@
 
 我们使用 **GitHub Projects (Beta)** 和以下看板：
 
-#### 1. **NOFX 开发看板**
+#### 1. **Alpha Trading 开发看板**
 
 **列：**
 ```
@@ -316,10 +316,10 @@ Available → Claimed → In Progress → Under Review → Paid
 
 ### 外部（社区）
 
-- **Telegram：** [@nofx_dev_community](https://t.me/nofx_dev_community)
+- **Telegram：** [@nofx_dev_community](https://github.com/the-dev-z/alpha-trading/discussions)
 - **GitHub Issues：** Bug 报告、功能请求
 - **GitHub Discussions：** 一般问题、想法
-- **Twitter：** [@nofx_official](https://x.com/nofx_official) - 公告
+- **Twitter：** [@the-dev-z](https://github.com/the-dev-z/alpha-trading) - 公告
 
 ---
 

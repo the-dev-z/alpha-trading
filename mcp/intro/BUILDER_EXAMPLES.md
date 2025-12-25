@@ -19,7 +19,7 @@ package main
 
 import (
     "fmt"
-    "nofx/mcp"
+    "alpha-trading/mcp"
 )
 
 func main() {
@@ -277,7 +277,7 @@ package main
 import (
     "fmt"
     "log"
-    "nofx/mcp"
+    "alpha-trading/mcp"
     "os"
 )
 
@@ -425,7 +425,7 @@ package main
 import (
     "encoding/json"
     "fmt"
-    "nofx/mcp"
+    "alpha-trading/mcp"
     "os"
 )
 

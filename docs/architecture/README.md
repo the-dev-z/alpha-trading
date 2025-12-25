@@ -1,14 +1,14 @@
-# NOFX Architecture Documentation
+# Alpha Trading Architecture Documentation
 
 **Language:** [English](README.md) | [中文](README.zh-CN.md)
 
-Technical documentation for developers who want to understand NOFX internals.
+Technical documentation for developers who want to understand Alpha Trading internals.
 
 ---
 
 ## Overview
 
-NOFX is a full-stack AI trading platform for cryptocurrency and US stock markets:
+Alpha Trading is a full-stack AI trading platform for cryptocurrency and US stock markets:
 
 - **Backend:** Go (Gin framework, SQLite)
 - **Frontend:** React/TypeScript (Vite, TailwindCSS)
@@ -21,7 +21,7 @@ NOFX is a full-stack AI trading platform for cryptocurrency and US stock markets
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              NOFX Platform                                  │
+│                              Alpha Trading Platform                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐│
@@ -154,10 +154,10 @@ nofx/
 
 **Want to contribute?**
 - Read the module documentation above
-- Check [Open Issues](https://github.com/NoFxAiOS/nofx/issues)
+- Check [Open Issues](https://github.com/the-dev-z/alpha-trading/issues)
 - Join our community
 
-**Repository:** https://github.com/NoFxAiOS/nofx
+**Repository:** https://github.com/the-dev-z/alpha-trading
 
 ---
 

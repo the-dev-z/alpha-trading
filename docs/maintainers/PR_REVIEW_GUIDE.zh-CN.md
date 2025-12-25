@@ -2,7 +2,7 @@
 
 **语言：** [English](PR_REVIEW_GUIDE.md) | [中文](PR_REVIEW_GUIDE.zh-CN.md)
 
-本指南适用于审核 pull request 的 NOFX 维护者。
+本指南适用于审核 pull request 的 Alpha Trading 维护者。
 
 ---
 
