@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# NOFX One-Click Installation Script
-# https://github.com/NoFxAiOS/nofx
+# Alpha Trading One-Click Installation Script
+# https://github.com/the-dev-z/alpha-trading
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/the-dev-z/alpha-trading/main/install.sh | bash
 #
 # Or with custom directory:
-#   curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash -s -- /opt/nofx
+#   curl -fsSL https://raw.githubusercontent.com/the-dev-z/alpha-trading/main/install.sh | bash -s -- /opt/alpha-trading
 #
 
 set -e
@@ -20,13 +20,13 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default installation directory
-INSTALL_DIR="${1:-$HOME/nofx}"
+INSTALL_DIR="${1:-$HOME/alpha-trading}"
 COMPOSE_FILE="docker-compose.prod.yml"
-GITHUB_RAW="https://raw.githubusercontent.com/NoFxAiOS/nofx/main"
+GITHUB_RAW="https://raw.githubusercontent.com/the-dev-z/alpha-trading/main"
 
 echo -e "${BLUE}"
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║                    NOFX AI Trading OS                      ║"
+echo "║              Alpha Trading - Quantitative Platform         ║"
 echo "║                   One-Click Installation                   ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -98,7 +98,7 @@ generate_env() {
 
     # Create .env file
     cat > .env << EOF
-# NOFX Configuration (Auto-generated)
+# Alpha Trading Configuration (Auto-generated)
 # Generated at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Server ports
@@ -130,7 +130,7 @@ pull_images() {
 
 # Start services
 start_services() {
-    echo -e "${YELLOW}Starting NOFX services...${NC}"
+    echo -e "${YELLOW}Starting Alpha Trading services...${NC}"
     $COMPOSE_CMD up -d
     echo -e "${GREEN}✓ Services started${NC}"
 }
@@ -191,7 +191,7 @@ print_success() {
     echo -e "║  💡 Keep Updated: Run this command daily to stay current   ║"
     echo -e "╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "  ${GREEN}curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash${NC}"
+    echo -e "  ${GREEN}curl -fsSL https://raw.githubusercontent.com/the-dev-z/alpha-trading/main/install.sh | bash${NC}"
     echo ""
     echo -e "  Updates are frequent. This one-liner pulls the latest"
     echo -e "  official images and restarts services automatically."
