@@ -1,14 +1,14 @@
 services:
   # Backend service (API and core logic)
-  nofx:
+  alpha-trading:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.backend
-    container_name: nofx-trading
+    container_name: alpha-trading
     restart: unless-stopped
     stop_grace_period: 30s  # 允许应用有 30 秒时间优雅关闭
     ports:
-      - "${NOFX_BACKEND_PORT:-8080}:8080"
+      - "${ALPHA_BACKEND_PORT:-8080}:8080"
     volumes:
       - ./data:/app/data
       - /etc/localtime:/etc/localtime:ro
@@ -18,7 +18,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - AI_MAX_TOKENS=8000
     networks:
-      - nofx-network
+      - alpha-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
       interval: 30s
@@ -27,18 +27,18 @@ services:
       start_period: 60s
 
   # Frontend service (static serving and proxy)
-  nofx-frontend:
+  alpha-frontend:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.frontend
-    container_name: nofx-frontend
+    container_name: alpha-frontend
     restart: unless-stopped
     ports:
-      - "${NOFX_FRONTEND_PORT:-3000}:80"
+      - "${ALPHA_FRONTEND_PORT:-3000}:80"
     networks:
-      - nofx-network
+      - alpha-network
     depends_on:
-      - nofx
+      - alpha-trading
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
@@ -47,5 +47,5 @@ services:
       start_period: 5s
 
 networks:
-  nofx-network:
+  alpha-network:
     driver: bridge

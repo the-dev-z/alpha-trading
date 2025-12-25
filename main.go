@@ -29,7 +29,7 @@ func main() {
 	logger.Init(nil)
 
 	logger.Info("╔════════════════════════════════════════════════════════════╗")
-	logger.Info("║    🤖 AI Multi-Model Trading System - DeepSeek & Qwen      ║")
+	logger.Info("║     📈 Alpha Trading - Quantitative Trading Platform       ║")
 	logger.Info("╚════════════════════════════════════════════════════════════╝")
 
 	// Initialize global configuration (loaded from .env)

@@ -26,7 +26,7 @@ var tokenBlacklist = struct {
 const maxBlacklistEntries = 100_000
 
 // OTPIssuer is the OTP issuer name
-const OTPIssuer = "nofxAI"
+const OTPIssuer = "AlphaTrading"
 
 // SetJWTSecret sets the JWT secret key
 func SetJWTSecret(secret string) {
@@ -120,7 +120,7 @@ func GenerateJWT(userID, email string) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Expires in 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "nofxAI",
+			Issuer:    "AlphaTrading",
 		},
 	}
 
