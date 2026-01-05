@@ -9,10 +9,30 @@ import (
 	"nofx/market"
 	"nofx/mcp"
 	"nofx/store"
+	"os"
 	"strings"
 	"sync"
 	"time"
 )
+
+// Hyperliquid Builder Fee configuration
+// Builder receives a percentage of trading fees from orders routed through them
+// Configure via environment variables: NOFX_HYPERLIQUID_BUILDER_ADDRESS, NOFX_HYPERLIQUID_BUILDER_FEE_RATE
+var (
+	hyperliquidBuilderAddress = os.Getenv("NOFX_HYPERLIQUID_BUILDER_ADDRESS")
+	hyperliquidBuilderFeeRate = getEnvInt("NOFX_HYPERLIQUID_BUILDER_FEE_RATE", 0)
+)
+
+// getEnvInt gets an integer from environment variable with default value
+func getEnvInt(key string, defaultVal int) int {
+	if val := os.Getenv(key); val != "" {
+		var result int
+		if _, err := fmt.Sscanf(val, "%d", &result); err == nil {
+			return result
+		}
+	}
+	return defaultVal
+}
 
 // AutoTraderConfig auto trading configuration (simplified version - AI makes all decisions)
 type AutoTraderConfig struct {
@@ -234,7 +254,13 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		trader = NewBitgetTrader(config.BitgetAPIKey, config.BitgetSecretKey, config.BitgetPassphrase)
 	case "hyperliquid":
 		logger.Infof("🏦 [%s] Using Hyperliquid trading", config.Name)
-		trader, err = NewHyperliquidTrader(config.HyperliquidPrivateKey, config.HyperliquidWalletAddr, config.HyperliquidTestnet)
+		trader, err = NewHyperliquidTrader(
+			config.HyperliquidPrivateKey,
+			config.HyperliquidWalletAddr,
+			config.HyperliquidTestnet,
+			hyperliquidBuilderAddress,
+			hyperliquidBuilderFeeRate,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize Hyperliquid trader: %w", err)
 		}

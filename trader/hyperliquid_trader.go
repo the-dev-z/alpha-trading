@@ -26,6 +26,7 @@ type HyperliquidTrader struct {
 	meta          *hyperliquid.Meta // Cache meta information (including precision)
 	metaMutex     sync.RWMutex      // Protect concurrent access to meta field
 	isCrossMargin bool              // Whether to use cross margin mode
+	builderInfo   *hyperliquid.BuilderInfo // Builder Fee configuration (optional)
 	// xyz dex support (stocks, forex, commodities)
 	xyzMeta      *xyzDexMeta
 	xyzMetaMutex sync.RWMutex
@@ -79,7 +80,8 @@ func isXyzDexAsset(symbol string) bool {
 }
 
 // NewHyperliquidTrader creates a Hyperliquid trader
-func NewHyperliquidTrader(privateKeyHex string, walletAddr string, testnet bool) (*HyperliquidTrader, error) {
+// builderAddress and builderFeeRate are optional - if provided, enables Builder Fee for order routing
+func NewHyperliquidTrader(privateKeyHex string, walletAddr string, testnet bool, builderAddress string, builderFeeRate int) (*HyperliquidTrader, error) {
 	// Remove 0x prefix from private key (if present, case-insensitive)
 	privateKeyHex = strings.TrimPrefix(strings.ToLower(privateKeyHex), "0x")
 
@@ -135,6 +137,16 @@ func NewHyperliquidTrader(privateKeyHex string, walletAddr string, testnet bool)
 
 	logger.Infof("✓ Hyperliquid trader initialized successfully (testnet=%v, wallet=%s)", testnet, walletAddr)
 
+	// Initialize Builder Fee if provided
+	var builderInfo *hyperliquid.BuilderInfo
+	if builderAddress != "" && builderFeeRate > 0 {
+		builderInfo = &hyperliquid.BuilderInfo{
+			Builder: builderAddress,
+			Fee:     builderFeeRate,
+		}
+		logger.Infof("✓ Builder Fee enabled: %s (rate: %d bp = %.2f%%)", builderAddress, builderFeeRate, float64(builderFeeRate)/100)
+	}
+
 	// Get meta information (including precision and other configurations)
 	meta, err := exchange.Info().Meta(ctx)
 	if err != nil {
@@ -180,6 +192,7 @@ func NewHyperliquidTrader(privateKeyHex string, walletAddr string, testnet bool)
 		walletAddr:    walletAddr,
 		meta:          meta,
 		isCrossMargin: true, // Use cross margin mode by default
+		builderInfo:   builderInfo,
 		privateKey:    privateKey,
 		isTestnet:     testnet,
 	}, nil
@@ -753,7 +766,7 @@ func (t *HyperliquidTrader) OpenLong(symbol string, quantity float64, leverage i
 			ReduceOnly: false,
 		}
 
-		_, err = t.exchange.Order(t.ctx, order, defaultBuilder)
+		_, err = t.exchange.Order(t.ctx, order, t.builderInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open long position: %w", err)
 		}
@@ -825,7 +838,7 @@ func (t *HyperliquidTrader) OpenShort(symbol string, quantity float64, leverage 
 			ReduceOnly: false,
 		}
 
-		_, err = t.exchange.Order(t.ctx, order, defaultBuilder)
+		_, err = t.exchange.Order(t.ctx, order, t.builderInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open short position: %w", err)
 		}
@@ -907,7 +920,7 @@ func (t *HyperliquidTrader) CloseLong(symbol string, quantity float64) (map[stri
 			ReduceOnly: true,
 		}
 
-		_, err = t.exchange.Order(t.ctx, order, defaultBuilder)
+		_, err = t.exchange.Order(t.ctx, order, t.builderInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to close long position: %w", err)
 		}
@@ -994,7 +1007,7 @@ func (t *HyperliquidTrader) CloseShort(symbol string, quantity float64) (map[str
 			ReduceOnly: true,
 		}
 
-		_, err = t.exchange.Order(t.ctx, order, defaultBuilder)
+		_, err = t.exchange.Order(t.ctx, order, t.builderInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to close short position: %w", err)
 		}
@@ -1731,7 +1744,7 @@ func (t *HyperliquidTrader) SetStopLoss(symbol string, positionSide string, quan
 			ReduceOnly: true,
 		}
 
-		_, err := t.exchange.Order(t.ctx, order, defaultBuilder)
+		_, err := t.exchange.Order(t.ctx, order, t.builderInfo)
 		if err != nil {
 			return fmt.Errorf("failed to set stop loss: %w", err)
 		}
@@ -1779,7 +1792,7 @@ func (t *HyperliquidTrader) SetTakeProfit(symbol string, positionSide string, qu
 			ReduceOnly: true,
 		}
 
-		_, err := t.exchange.Order(t.ctx, order, defaultBuilder)
+		_, err := t.exchange.Order(t.ctx, order, t.builderInfo)
 		if err != nil {
 			return fmt.Errorf("failed to set take profit: %w", err)
 		}
@@ -2078,10 +2091,5 @@ func (t *HyperliquidTrader) GetTrades(startTime time.Time, limit int) ([]TradeRe
 	return trades, nil
 }
 
-// defaultBuilder is the builder info for order routing
-//
-//	var defaultBuilder = &hyperliquid.BuilderInfo{
-//		Builder: "0x891dc6f05ad47a3c1a05da55e7a7517971faaf0d",
-//		Fee:     10,
-//	}
-var defaultBuilder *hyperliquid.BuilderInfo = nil
+// Note: Builder info is now configured per-trader via NewHyperliquidTrader parameters
+// See NOFX_HYPERLIQUID_BUILDER_ADDRESS and NOFX_HYPERLIQUID_BUILDER_FEE_RATE in .env

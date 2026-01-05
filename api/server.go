@@ -587,6 +587,8 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 				string(exchangeCfg.APIKey), // private key
 				exchangeCfg.HyperliquidWalletAddr,
 				exchangeCfg.Testnet,
+				"", // builder address (configured via env for auto trader)
+				0,  // builder fee rate
 			)
 		case "aster":
 			tempTrader, createErr = trader.NewAsterTrader(
@@ -1131,6 +1133,8 @@ func (s *Server) handleSyncBalance(c *gin.Context) {
 			string(exchangeCfg.APIKey),
 			exchangeCfg.HyperliquidWalletAddr,
 			exchangeCfg.Testnet,
+			"", // builder address
+			0,  // builder fee rate
 		)
 	case "aster":
 		tempTrader, createErr = trader.NewAsterTrader(
@@ -1283,6 +1287,8 @@ func (s *Server) handleClosePosition(c *gin.Context) {
 			string(exchangeCfg.APIKey),
 			exchangeCfg.HyperliquidWalletAddr,
 			exchangeCfg.Testnet,
+			"", // builder address
+			0,  // builder fee rate
 		)
 	case "aster":
 		tempTrader, createErr = trader.NewAsterTrader(
