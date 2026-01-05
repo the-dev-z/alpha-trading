@@ -1,4 +1,4 @@
-package decision
+package kernel
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"nofx/logger"
 	"nofx/market"
 	"nofx/mcp"
-	"nofx/provider"
+	"nofx/provider/nofxos"
 	"nofx/security"
 	"nofx/store"
 	"regexp"
@@ -119,8 +119,10 @@ type Context struct {
 	MultiTFMarket   map[string]map[string]*market.Data `json:"-"`
 	OITopDataMap    map[string]*OITopData              `json:"-"`
 	QuantDataMap    map[string]*QuantData              `json:"-"`
-	OIRankingData   *provider.OIRankingData                `json:"-"` // Market-wide OI ranking data
-	BTCETHLeverage  int                                `json:"-"`
+	OIRankingData      *nofxos.OIRankingData      `json:"-"` // Market-wide OI ranking data
+	NetFlowRankingData *nofxos.NetFlowRankingData `json:"-"` // Market-wide fund flow ranking data
+	PriceRankingData   *nofxos.PriceRankingData   `json:"-"` // Market-wide price gainers/losers
+	BTCETHLeverage     int                          `json:"-"`
 	AltcoinLeverage int                                `json:"-"`
 	Timeframes      []string                           `json:"-"`
 }
@@ -189,17 +191,41 @@ type OIDeltaData struct {
 
 // StrategyEngine strategy execution engine
 type StrategyEngine struct {
-	config *store.StrategyConfig
+	config       *store.StrategyConfig
+	nofxosClient *nofxos.Client
 }
 
 // NewStrategyEngine creates strategy execution engine
 func NewStrategyEngine(config *store.StrategyConfig) *StrategyEngine {
-	return &StrategyEngine{config: config}
+	// Create NofxOS client with API key from config
+	apiKey := config.Indicators.NofxOSAPIKey
+	if apiKey == "" {
+		apiKey = nofxos.DefaultAuthKey
+	}
+	client := nofxos.NewClient(nofxos.DefaultBaseURL, apiKey)
+
+	return &StrategyEngine{
+		config:       config,
+		nofxosClient: client,
+	}
 }
 
 // GetRiskControlConfig gets risk control configuration
 func (e *StrategyEngine) GetRiskControlConfig() store.RiskControlConfig {
 	return e.config.RiskControl
+}
+
+// GetLanguage returns the language from config or falls back to auto-detection
+func (e *StrategyEngine) GetLanguage() Language {
+	switch e.config.Language {
+	case "zh":
+		return LangChinese
+	case "en":
+		return LangEnglish
+	default:
+		// Fall back to auto-detection from prompt content for backward compatibility
+		return detectLanguage(e.config.PromptSections.RoleDefinition)
+	}
 }
 
 // GetConfig gets complete strategy configuration
@@ -239,7 +265,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// Ensure OITopDataMap is initialized
 	if ctx.OITopDataMap == nil {
 		ctx.OITopDataMap = make(map[string]*OITopData)
-		oiPositions, err := provider.GetOITopPositions()
+		oiPositions, err := engine.nofxosClient.GetOITopPositions()
 		if err == nil {
 			for _, pos := range oiPositions {
 				ctx.OITopDataMap[pos.Symbol] = &OITopData{
@@ -385,13 +411,6 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 
 	coinSource := e.config.CoinSource
 
-	if coinSource.CoinPoolAPIURL != "" {
-		provider.SetCoinPoolAPI(coinSource.CoinPoolAPIURL)
-	}
-	if coinSource.OITopAPIURL != "" {
-		provider.SetOITopAPI(coinSource.OITopAPIURL)
-	}
-
 	switch coinSource.SourceType {
 	case "static":
 		for _, symbol := range coinSource.StaticCoins {
@@ -401,12 +420,13 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 				Sources: []string{"static"},
 			})
 		}
-		return candidates, nil
 
-	case "coinpool":
-		// 检查 use_coin_pool 标志，如果为 false 则回退到静态币种
-		if !coinSource.UseCoinPool {
-			logger.Infof("⚠️  source_type is 'coinpool' but use_coin_pool is false, falling back to static coins")
+		return e.filterExcludedCoins(candidates), nil
+
+	case "ai500":
+		// 检查 use_ai500 标志，如果为 false 则回退到静态币种
+		if !coinSource.UseAI500 {
+			logger.Infof("⚠️  source_type is 'ai500' but use_ai500 is false, falling back to static coins")
 			for _, symbol := range coinSource.StaticCoins {
 				symbol = market.Normalize(symbol)
 				candidates = append(candidates, CandidateCoin{
@@ -414,9 +434,13 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 					Sources: []string{"static"},
 				})
 			}
-			return candidates, nil
+			return e.filterExcludedCoins(candidates), nil
 		}
-		return e.getCoinPoolCoins(coinSource.CoinPoolLimit)
+		coins, err := e.getAI500Coins(coinSource.AI500Limit)
+		if err != nil {
+			return nil, err
+		}
+		return e.filterExcludedCoins(coins), nil
 
 	case "oi_top":
 		// 检查 use_oi_top 标志，如果为 false 则回退到静态币种
@@ -429,15 +453,19 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 					Sources: []string{"static"},
 				})
 			}
-			return candidates, nil
+			return e.filterExcludedCoins(candidates), nil
 		}
-		return e.getOITopCoins(coinSource.OITopLimit)
+		coins, err := e.getOITopCoins(coinSource.OITopLimit)
+		if err != nil {
+			return nil, err
+		}
+		return e.filterExcludedCoins(coins), nil
 
 	case "mixed":
-		if coinSource.UseCoinPool {
-			poolCoins, err := e.getCoinPoolCoins(coinSource.CoinPoolLimit)
+		if coinSource.UseAI500 {
+			poolCoins, err := e.getAI500Coins(coinSource.AI500Limit)
 			if err != nil {
-				logger.Infof("⚠️  Failed to get AI500 coin pool: %v", err)
+				logger.Infof("⚠️  Failed to get AI500 coins: %v", err)
 			} else {
 				for _, coin := range poolCoins {
 					symbolSources[coin.Symbol] = append(symbolSources[coin.Symbol], "ai500")
@@ -471,19 +499,45 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 				Sources: sources,
 			})
 		}
-		return candidates, nil
+		return e.filterExcludedCoins(candidates), nil
 
 	default:
 		return nil, fmt.Errorf("unknown coin source type: %s", coinSource.SourceType)
 	}
 }
 
-func (e *StrategyEngine) getCoinPoolCoins(limit int) ([]CandidateCoin, error) {
+// filterExcludedCoins removes excluded coins from the candidates list
+func (e *StrategyEngine) filterExcludedCoins(candidates []CandidateCoin) []CandidateCoin {
+	if len(e.config.CoinSource.ExcludedCoins) == 0 {
+		return candidates
+	}
+
+	// Build excluded set for O(1) lookup
+	excluded := make(map[string]bool)
+	for _, coin := range e.config.CoinSource.ExcludedCoins {
+		normalized := market.Normalize(coin)
+		excluded[normalized] = true
+	}
+
+	// Filter out excluded coins
+	filtered := make([]CandidateCoin, 0, len(candidates))
+	for _, c := range candidates {
+		if !excluded[c.Symbol] {
+			filtered = append(filtered, c)
+		} else {
+			logger.Infof("🚫 Excluded coin: %s", c.Symbol)
+		}
+	}
+
+	return filtered
+}
+
+func (e *StrategyEngine) getAI500Coins(limit int) ([]CandidateCoin, error) {
 	if limit <= 0 {
 		limit = 30
 	}
 
-	symbols, err := provider.GetTopRatedCoins(limit)
+	symbols, err := e.nofxosClient.GetTopRatedCoins(limit)
 	if err != nil {
 		return nil, err
 	}
@@ -503,7 +557,7 @@ func (e *StrategyEngine) getOITopCoins(limit int) ([]CandidateCoin, error) {
 		limit = 20
 	}
 
-	positions, err := provider.GetOITopPositions()
+	positions, err := e.nofxosClient.GetOITopPositions()
 	if err != nil {
 		return nil, err
 	}
@@ -610,50 +664,82 @@ func extractJSONPath(data interface{}, path string) interface{} {
 
 // FetchQuantData fetches quantitative data for a single coin
 func (e *StrategyEngine) FetchQuantData(symbol string) (*QuantData, error) {
-	if !e.config.Indicators.EnableQuantData || e.config.Indicators.QuantDataAPIURL == "" {
+	if !e.config.Indicators.EnableQuantData {
 		return nil, nil
 	}
 
-	apiURL := e.config.Indicators.QuantDataAPIURL
-	url := strings.Replace(apiURL, "{symbol}", symbol, -1)
+	// Use nofxos client with unified API key
+	include := "oi,price"
+	if e.config.Indicators.EnableQuantNetflow {
+		include = "netflow,oi,price"
+	}
 
-	// SSRF Protection: Validate URL before making request
-	resp, err := security.SafeGet(url, 10*time.Second)
+	nofxosData, err := e.nofxosClient.GetCoinData(symbol, include)
 	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to fetch quant data: %w", err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+	if nofxosData == nil {
+		return nil, nil
 	}
 
-	var apiResp struct {
-		Code int        `json:"code"`
-		Data *QuantData `json:"data"`
+	// Convert nofxos.QuantData to kernel.QuantData
+	quantData := &QuantData{
+		Symbol:      nofxosData.Symbol,
+		Price:       nofxosData.Price,
+		PriceChange: nofxosData.PriceChange,
 	}
 
-	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	// Convert OI data
+	if nofxosData.OI != nil {
+		quantData.OI = make(map[string]*OIData)
+		for exchange, oiData := range nofxosData.OI {
+			if oiData != nil {
+				kData := &OIData{
+					CurrentOI: oiData.CurrentOI,
+				}
+				if oiData.Delta != nil {
+					kData.Delta = make(map[string]*OIDeltaData)
+					for dur, delta := range oiData.Delta {
+						if delta != nil {
+							kData.Delta[dur] = &OIDeltaData{
+								OIDelta:        delta.OIDelta,
+								OIDeltaValue:   delta.OIDeltaValue,
+								OIDeltaPercent: delta.OIDeltaPercent,
+							}
+						}
+					}
+				}
+				quantData.OI[exchange] = kData
+			}
+		}
 	}
 
-	if apiResp.Code != 0 {
-		return nil, fmt.Errorf("API returned error code: %d", apiResp.Code)
+	// Convert Netflow data
+	if nofxosData.Netflow != nil {
+		quantData.Netflow = &NetflowData{}
+		if nofxosData.Netflow.Institution != nil {
+			quantData.Netflow.Institution = &FlowTypeData{
+				Future: nofxosData.Netflow.Institution.Future,
+				Spot:   nofxosData.Netflow.Institution.Spot,
+			}
+		}
+		if nofxosData.Netflow.Personal != nil {
+			quantData.Netflow.Personal = &FlowTypeData{
+				Future: nofxosData.Netflow.Personal.Future,
+				Spot:   nofxosData.Netflow.Personal.Spot,
+			}
+		}
 	}
 
-	return apiResp.Data, nil
+	return quantData, nil
 }
 
 // FetchQuantDataBatch batch fetches quantitative data
 func (e *StrategyEngine) FetchQuantDataBatch(symbols []string) map[string]*QuantData {
 	result := make(map[string]*QuantData)
 
-	if !e.config.Indicators.EnableQuantData || e.config.Indicators.QuantDataAPIURL == "" {
+	if !e.config.Indicators.EnableQuantData {
 		return result
 	}
 
@@ -672,26 +758,10 @@ func (e *StrategyEngine) FetchQuantDataBatch(symbols []string) map[string]*Quant
 }
 
 // FetchOIRankingData fetches market-wide OI ranking data
-func (e *StrategyEngine) FetchOIRankingData() *provider.OIRankingData {
+func (e *StrategyEngine) FetchOIRankingData() *nofxos.OIRankingData {
 	indicators := e.config.Indicators
 	if !indicators.EnableOIRanking {
 		return nil
-	}
-
-	baseURL := indicators.OIRankingAPIURL
-	if baseURL == "" {
-		baseURL = "http://nofxaios.com:30006"
-	}
-
-	// Get auth key from existing API URL or use default
-	authKey := "cm_568c67eae410d912c54c"
-	if indicators.QuantDataAPIURL != "" {
-		if idx := strings.Index(indicators.QuantDataAPIURL, "auth="); idx != -1 {
-			authKey = indicators.QuantDataAPIURL[idx+5:]
-			if ampIdx := strings.Index(authKey, "&"); ampIdx != -1 {
-				authKey = authKey[:ampIdx]
-			}
-		}
 	}
 
 	duration := indicators.OIRankingDuration
@@ -706,7 +776,7 @@ func (e *StrategyEngine) FetchOIRankingData() *provider.OIRankingData {
 
 	logger.Infof("📊 Fetching OI ranking data (duration: %s, limit: %d)", duration, limit)
 
-	data, err := provider.GetOIRankingData(baseURL, authKey, duration, limit)
+	data, err := e.nofxosClient.GetOIRanking(duration, limit)
 	if err != nil {
 		logger.Warnf("⚠️  Failed to fetch OI ranking data: %v", err)
 		return nil
@@ -714,6 +784,68 @@ func (e *StrategyEngine) FetchOIRankingData() *provider.OIRankingData {
 
 	logger.Infof("✓ OI ranking data ready: %d top, %d low positions",
 		len(data.TopPositions), len(data.LowPositions))
+
+	return data
+}
+
+// FetchNetFlowRankingData fetches market-wide NetFlow ranking data
+func (e *StrategyEngine) FetchNetFlowRankingData() *nofxos.NetFlowRankingData {
+	indicators := e.config.Indicators
+	if !indicators.EnableNetFlowRanking {
+		return nil
+	}
+
+	duration := indicators.NetFlowRankingDuration
+	if duration == "" {
+		duration = "1h"
+	}
+
+	limit := indicators.NetFlowRankingLimit
+	if limit <= 0 {
+		limit = 10
+	}
+
+	logger.Infof("💰 Fetching NetFlow ranking data (duration: %s, limit: %d)", duration, limit)
+
+	data, err := e.nofxosClient.GetNetFlowRanking(duration, limit)
+	if err != nil {
+		logger.Warnf("⚠️  Failed to fetch NetFlow ranking data: %v", err)
+		return nil
+	}
+
+	logger.Infof("✓ NetFlow ranking data ready: inst_in=%d, inst_out=%d, retail_in=%d, retail_out=%d",
+		len(data.InstitutionFutureTop), len(data.InstitutionFutureLow),
+		len(data.PersonalFutureTop), len(data.PersonalFutureLow))
+
+	return data
+}
+
+// FetchPriceRankingData fetches market-wide price ranking data (gainers/losers)
+func (e *StrategyEngine) FetchPriceRankingData() *nofxos.PriceRankingData {
+	indicators := e.config.Indicators
+	if !indicators.EnablePriceRanking {
+		return nil
+	}
+
+	durations := indicators.PriceRankingDuration
+	if durations == "" {
+		durations = "1h"
+	}
+
+	limit := indicators.PriceRankingLimit
+	if limit <= 0 {
+		limit = 10
+	}
+
+	logger.Infof("📈 Fetching Price ranking data (durations: %s, limit: %d)", durations, limit)
+
+	data, err := e.nofxosClient.GetPriceRanking(durations, limit)
+	if err != nil {
+		logger.Warnf("⚠️  Failed to fetch Price ranking data: %v", err)
+		return nil
+	}
+
+	logger.Infof("✓ Price ranking data ready for %d durations", len(data.Durations))
 
 	return data
 }
@@ -729,7 +861,7 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant string
 	promptSections := e.config.PromptSections
 
 	// 0. Data Dictionary & Schema (ensure AI understands all fields)
-	lang := detectLanguage(promptSections.RoleDefinition)
+	lang := e.GetLanguage()
 	schemaPrompt := GetSchemaPrompt(lang)
 	sb.WriteString(schemaPrompt)
 	sb.WriteString("\n\n")
@@ -920,7 +1052,7 @@ func (e *StrategyEngine) writeAvailableIndicators(sb *strings.Builder) {
 		sb.WriteString("- Funding rate\n")
 	}
 
-	if len(e.config.CoinSource.StaticCoins) > 0 || e.config.CoinSource.UseCoinPool || e.config.CoinSource.UseOITop {
+	if len(e.config.CoinSource.StaticCoins) > 0 || e.config.CoinSource.UseAI500 || e.config.CoinSource.UseOITop {
 		sb.WriteString("- AI500 / OI_Top filter tags (if available)\n")
 	}
 
@@ -976,8 +1108,8 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 
 	// Historical trading statistics (helps AI understand past performance)
 	if ctx.TradingStats != nil && ctx.TradingStats.TotalTrades > 0 {
-		// Detect language from strategy config
-		lang := detectLanguage(e.config.PromptSections.RoleDefinition)
+		// Get language from strategy config
+		lang := e.GetLanguage()
 
 		// Win/Loss ratio
 		var winLossRatio float64
@@ -1081,9 +1213,25 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	}
 	sb.WriteString("\n")
 
+	// Get language for market data formatting
+	nofxosLang := nofxos.LangEnglish
+	if e.GetLanguage() == LangChinese {
+		nofxosLang = nofxos.LangChinese
+	}
+
 	// OI Ranking data (market-wide open interest changes)
 	if ctx.OIRankingData != nil {
-		sb.WriteString(provider.FormatOIRankingForAI(ctx.OIRankingData))
+		sb.WriteString(nofxos.FormatOIRankingForAI(ctx.OIRankingData, nofxosLang))
+	}
+
+	// NetFlow Ranking data (market-wide fund flow)
+	if ctx.NetFlowRankingData != nil {
+		sb.WriteString(nofxos.FormatNetFlowRankingForAI(ctx.NetFlowRankingData, nofxosLang))
+	}
+
+	// Price Ranking data (market-wide gainers/losers)
+	if ctx.PriceRankingData != nil {
+		sb.WriteString(nofxos.FormatPriceRankingForAI(ctx.PriceRankingData, nofxosLang))
 	}
 
 	sb.WriteString("---\n\n")
