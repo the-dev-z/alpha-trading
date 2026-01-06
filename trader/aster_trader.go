@@ -8,17 +8,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"nofx/logger"
 	"math"
 	"math/big"
 	"net/http"
 	"net/url"
-	"nofx/hook"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"nofx/hook"
+	"nofx/logger"
+	"nofx/store"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -91,10 +93,17 @@ func NewAsterTrader(user, signer, privateKeyHex string) (*AsterTrader, error) {
 // 3. Auto-create Broker mode API Key
 // 4. Encrypt and save API Key to database
 // 5. Return usable Trader instance
+//
+// Parameters:
+// - userID: System user ID (DB primary key)
+// - userAddr: Main wallet address (for login and signing)
+// - userPrivateKey: Main wallet private key (only for signing, never uploaded)
+// - database: Store instance (for credential persistence)
 func NewAsterTraderAuto(
+	userID string,
 	userAddr string,
 	userPrivateKey string,
-	database interface{},
+	database *store.Store,
 ) (*AsterTrader, error) {
 	logger.Infof("🚀 [Aster Auto] Initializing Aster Trader (address: %s)", userAddr)
 
@@ -105,8 +114,28 @@ func NewAsterTraderAuto(
 	}
 
 	// 2. Check database for existing API Key
-	// Note: Database lookup disabled for pro branch - always create new
-	logger.Infof("  📂 Database lookup disabled, starting auto-creation...")
+	logger.Infof("  📂 Checking database for existing Aster credentials...")
+	if database != nil {
+		exchange, err := database.Exchange().GetExchangeByType(userID, "aster")
+		if err == nil && exchange.AsterSigner != "" && string(exchange.AsterPrivateKey) != "" {
+			// Check wallet address mismatch
+			if exchange.AsterUser != "" && !strings.EqualFold(exchange.AsterUser, userAddr) {
+				logger.Infof("  ℹ Wallet address mismatch, will recreate API Key")
+			} else {
+				logger.Infof("  ✓ Found existing API Key, using cached credentials")
+				logger.Infof("     └─ User: %s", exchange.AsterUser)
+				logger.Infof("     └─ Signer: %s", exchange.AsterSigner)
+
+				// Use existing credentials
+				return NewAsterTrader(
+					exchange.AsterUser,
+					exchange.AsterSigner,
+					string(exchange.AsterPrivateKey),
+				)
+			}
+		}
+		logger.Infof("  ℹ No existing API Key found, starting auto-creation...")
+	}
 
 	// 3. First use - execute full automation flow
 	client := &http.Client{
@@ -145,9 +174,17 @@ func NewAsterTraderAuto(
 	logger.Infof("  ✓ API Key created")
 	logger.Infof("     └─ API Key: %s", apiKey)
 
-	// 3.3 Save to database (disabled for pro branch)
-	// TODO: Add store adapter for credential persistence
-	logger.Warnf("  ⚠️ Database storage disabled, credentials not persisted")
+	// 3.3 Save to database
+	if database != nil {
+		logger.Infof("  💾 Step 3/3: Saving credentials to database...")
+		err = database.Exchange().SaveAsterCredentials(userID, userAddr, apiKey, secretKey)
+		if err != nil {
+			logger.Warnf("  ⚠️ Failed to save Aster credentials: %v", err)
+			logger.Warnf("     Continue creating Trader, but credentials not persisted")
+		} else {
+			logger.Infof("  ✓ Credentials encrypted and saved to database")
+		}
+	}
 
 	// 3.4 Create and return Trader instance
 	logger.Infof("  🎉 Automation complete! Creating Trader instance...")
@@ -176,10 +213,21 @@ func NewAsterTraderAuto(
 // 4. Create API Key with API Wallet (optional)
 // 5. Encrypt and save API Wallet to database
 // 6. Return usable Trader instance
+//
+// Parameters:
+// - userID: System user ID (DB primary key)
+// - mainWallet: Main wallet address (for user identification)
+// - database: Store instance (for credential persistence)
+//
+// Returns:
+// - *AsterTrader: Usable trader instance
+// - bool: Whether API Key was created (optional step)
+// - error: Error message
 func NewAsterTraderAutoV2(
+	userID string,
 	mainWallet string,
-	database interface{},
-) (*AsterTrader, error) {
+	database *store.Store,
+) (*AsterTrader, bool, error) {
 	logger.Infof("🚀 [Aster Auto] Initializing Aster Trader (API Wallet mode)")
 	logger.Infof("  ├─ Main Wallet: %s", mainWallet)
 
@@ -190,8 +238,32 @@ func NewAsterTraderAutoV2(
 	}
 
 	// 2. Check database for existing API Wallet
-	// Note: Database lookup disabled for pro branch - always generate new
-	logger.Infof("  📂 Database lookup disabled, starting auto-generation...")
+	logger.Infof("  📂 Checking database for existing API Wallet...")
+	if database != nil {
+		exchange, err := database.Exchange().GetExchangeByType(userID, "aster")
+		if err == nil && exchange.AsterSigner != "" && string(exchange.AsterPrivateKey) != "" {
+			// Check wallet address mismatch
+			if exchange.AsterUser != "" && !strings.EqualFold(exchange.AsterUser, mainWallet) {
+				logger.Infof("  ℹ Wallet address mismatch, will regenerate API Wallet")
+			} else {
+				logger.Infof("  ✓ Found existing API Wallet, using cached credentials")
+				logger.Infof("     ├─ Main Wallet: %s", exchange.AsterUser)
+				logger.Infof("     └─ API Wallet: %s", exchange.AsterSigner)
+
+				// Use existing API Wallet
+				trader, err := NewAsterTrader(
+					exchange.AsterUser,
+					exchange.AsterSigner,
+					string(exchange.AsterPrivateKey),
+				)
+				if err != nil {
+					return nil, false, err
+				}
+				return trader, true, nil
+			}
+		}
+		logger.Infof("  ℹ No existing API Wallet found, starting auto-generation...")
+	}
 
 	// 3. First use - execute full auto-generation flow
 	client := &http.Client{
@@ -207,7 +279,7 @@ func NewAsterTraderAutoV2(
 	logger.Infof("  🔑 Step 1/4: Generating API Wallet (like Hyperliquid Agent Wallet)...")
 	apiWalletAddr, apiWalletPrivKey, err := GenerateAsterAPIWallet()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate API Wallet: %w", err)
+		return nil, false, fmt.Errorf("failed to generate API Wallet: %w", err)
 	}
 	logger.Infof("  ✓ API Wallet generated")
 	logger.Infof("     ├─ Main Wallet: %s", mainWallet)
@@ -222,12 +294,13 @@ func NewAsterTraderAutoV2(
 		client,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("auto login failed: %w", err)
+		return nil, false, fmt.Errorf("auto login failed: %w", err)
 	}
 	logger.Infof("  ✓ Login successful")
 
 	// 3.3 Create Broker mode API Key (optional, API Wallet can be used directly)
 	logger.Infof("  🔑 Step 3/4: Creating API Key (Broker mode)...")
+	apiCreated := false
 	apiKey, secretKey, err := AsterAutoCreateBrokerApiKey(
 		token,
 		apiWalletAddr,
@@ -238,23 +311,32 @@ func NewAsterTraderAutoV2(
 		// API Key creation is optional, API Wallet can work directly
 		logger.Warnf("  ⚠️ API Key creation failed (not critical): %v", err)
 		logger.Infof("  📝 Using API Wallet directly...")
-		apiKey = apiWalletAddr
-		secretKey = apiWalletPrivKey
 	} else {
+		apiCreated = true
 		logger.Infof("  ✓ API Key created")
 		logger.Infof("     └─ API Key: %s", apiKey)
-		_ = secretKey // Not used for now
+		// Note: We use API Wallet credentials, not the created API Key
+		_ = apiKey
+		_ = secretKey
 	}
 
-	// 3.4 Save API Wallet to database (disabled for pro branch)
-	// TODO: Add store adapter for API Wallet persistence
-	logger.Warnf("  ⚠️ Database storage disabled, API Wallet not persisted")
+	// 3.4 Save API Wallet to database
+	if database != nil {
+		logger.Infof("  💾 Step 4/4: Saving API Wallet to database...")
+		err = database.Exchange().SaveAsterAPIWallet(userID, mainWallet, apiWalletAddr, apiWalletPrivKey)
+		if err != nil {
+			logger.Warnf("  ⚠️ Failed to save API Wallet: %v", err)
+			logger.Warnf("     Continue creating Trader, but credentials not persisted")
+		} else {
+			logger.Infof("  ✓ API Wallet encrypted and saved to database")
+		}
+	}
 
 	// 3.5 Create and return Trader instance
 	logger.Infof("  🎉 Auto-generation complete! Creating Trader instance...")
 	trader, err := NewAsterTrader(mainWallet, apiWalletAddr, apiWalletPrivKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Trader: %w", err)
+		return nil, false, fmt.Errorf("failed to create Trader: %w", err)
 	}
 
 	logger.Infof("✓ Aster Trader initialization complete (API Wallet mode)!")
@@ -265,7 +347,7 @@ func NewAsterTraderAutoV2(
 		logger.Infof("  └─ Referral commission enabled (10-20%%)")
 	}
 
-	return trader, nil
+	return trader, apiCreated, nil
 }
 
 // NewAsterTraderWithSignatures creates Aster trader using frontend signatures (MetaMask mode)
@@ -277,13 +359,23 @@ func NewAsterTraderAutoV2(
 // 3. Create Broker mode API Key with frontend signature
 // 4. Encrypt and save API Key to database
 // 5. Return usable Trader instance
+//
+// Parameters:
+// - userID: System user ID (DB primary key)
+// - userAddr: Main wallet address
+// - loginSignature: MetaMask signature result for login
+// - loginNonce: Nonce from Aster API for login
+// - createKeySignature: MetaMask signature result for API Key creation
+// - createKeyNonce: Nonce from Aster API for API Key creation
+// - database: Store instance (for credential persistence)
 func NewAsterTraderWithSignatures(
+	userID string,
 	userAddr string,
 	loginSignature string,
 	loginNonce string,
 	createKeySignature string,
 	createKeyNonce string,
-	database interface{},
+	database *store.Store,
 ) (*AsterTrader, error) {
 	logger.Infof("🚀 [Aster Signature Mode] Initializing Aster Trader (address: %s)", userAddr)
 
@@ -294,8 +386,26 @@ func NewAsterTraderWithSignatures(
 	}
 
 	// 2. Check database for existing API Key
-	// Note: Database lookup disabled for pro branch - always create with signature
-	logger.Infof("  📂 Database lookup disabled, creating with signature...")
+	logger.Infof("  📂 Checking database for existing credentials...")
+	if database != nil {
+		exchange, err := database.Exchange().GetExchangeByType(userID, "aster")
+		if err == nil && exchange.AsterSigner != "" && string(exchange.AsterPrivateKey) != "" {
+			// Check wallet address mismatch
+			if exchange.AsterUser != "" && !strings.EqualFold(exchange.AsterUser, userAddr) {
+				logger.Infof("  ℹ Wallet address mismatch, will recreate with signature")
+			} else {
+				logger.Infof("  ✓ Found existing API Key, using cached credentials")
+
+				// Use existing credentials
+				return NewAsterTrader(
+					exchange.AsterUser,
+					exchange.AsterSigner,
+					string(exchange.AsterPrivateKey),
+				)
+			}
+		}
+		logger.Infof("  ℹ No existing API Key found, creating with signature...")
+	}
 
 	// 3. First use - execute signature mode automation flow
 	client := &http.Client{
@@ -336,9 +446,16 @@ func NewAsterTraderWithSignatures(
 	logger.Infof("  ✓ API Key created")
 	logger.Infof("     └─ API Key: %s", apiKey)
 
-	// 3.3 Save to database (disabled for pro branch)
-	// TODO: Add store adapter for credential persistence
-	logger.Warnf("  ⚠️ Database storage disabled, credentials not persisted")
+	// 3.3 Save to database
+	if database != nil {
+		logger.Infof("  💾 Saving credentials to database...")
+		err = database.Exchange().SaveAsterCredentials(userID, userAddr, apiKey, secretKey)
+		if err != nil {
+			logger.Warnf("  ⚠️ Failed to save credentials: %v", err)
+		} else {
+			logger.Infof("  ✓ Credentials encrypted and saved to database")
+		}
+	}
 
 	// 3.4 Create and return Trader instance
 	logger.Infof("  🎉 Signature mode automation complete! Creating Trader instance...")

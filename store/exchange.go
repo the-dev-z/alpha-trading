@@ -299,6 +299,64 @@ func (s *ExchangeStore) Delete(userID, id string) error {
 	return nil
 }
 
+// GetExchangeByType gets an exchange by exchange type (e.g., "aster", "hyperliquid")
+// This is a convenience method for wallet connection flows
+func (s *ExchangeStore) GetExchangeByType(userID, exchangeType string) (*Exchange, error) {
+	var exchange Exchange
+	err := s.db.Where("user_id = ? AND exchange_type = ?", userID, exchangeType).First(&exchange).Error
+	if err != nil {
+		return nil, err
+	}
+	return &exchange, nil
+}
+
+// SaveAsterCredentials saves Aster API credentials (auto-create or update)
+// Used for wallet connection flow, automatically binds Agent Code and creates API Key
+//
+// Parameters:
+// - userID: System user ID (DB primary key)
+// - mainWallet: Main wallet address (Aster user)
+// - apiKey: API Key (signer address)
+// - secretKey: Secret Key (private key)
+func (s *ExchangeStore) SaveAsterCredentials(userID, mainWallet, apiKey, secretKey string) error {
+	// Check if Aster exchange exists for this user
+	var existing Exchange
+	err := s.db.Where("user_id = ? AND exchange_type = ?", userID, "aster").First(&existing).Error
+
+	if err == nil {
+		// Update existing record
+		updates := map[string]interface{}{
+			"aster_user":        mainWallet,
+			"aster_signer":      apiKey,
+			"aster_private_key": crypto.EncryptedString(secretKey),
+			"enabled":           true,
+			"updated_at":        time.Now().UTC(),
+		}
+		return s.db.Model(&Exchange{}).Where("id = ?", existing.ID).Updates(updates).Error
+	}
+
+	// Create new Aster exchange
+	_, err = s.Create(userID, "aster", "Default", true, "", "", "", false,
+		"", mainWallet, apiKey, secretKey, "", "", "", 0)
+	return err
+}
+
+// SaveAsterAPIWallet saves Aster API Wallet information (correct way)
+// According to Aster V3 API documentation:
+// - user: Main wallet address (for user identification)
+// - signer: API Wallet address (backend-generated wallet address)
+// - privateKey: API Wallet private key (backend-generated, for signing requests)
+//
+// Parameters:
+// - userID: System user ID (DB primary key)
+// - mainWallet: Main wallet address (user's main wallet)
+// - apiWalletAddr: API Wallet address (backend-generated)
+// - apiWalletPrivKey: API Wallet private key (backend-generated, hex format)
+func (s *ExchangeStore) SaveAsterAPIWallet(userID, mainWallet, apiWalletAddr, apiWalletPrivKey string) error {
+	// Same implementation as SaveAsterCredentials, just with different naming
+	return s.SaveAsterCredentials(userID, mainWallet, apiWalletAddr, apiWalletPrivKey)
+}
+
 // CreateLegacy creates exchange configuration (legacy API for backward compatibility)
 // This method is deprecated, use Create instead
 func (s *ExchangeStore) CreateLegacy(userID, id, name, typ string, enabled bool, apiKey, secretKey string, testnet bool,

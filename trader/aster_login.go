@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"nofx/logger"
+	"nofx/store"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -17,9 +18,14 @@ import (
 // 1. 數據庫配置（最高優先級，可動態修改）
 // 2. 環境變數（部署時配置）
 // 3. 空字符串（向後相容）
-func getAsterAgentCode(database interface{}) string {
-	// Note: Database lookup disabled for pro branch compatibility
-	// TODO: Add store adapter for database config lookup
+func getAsterAgentCode(database *store.Store) string {
+	// 優先級 1: 從數據庫讀取
+	if database != nil {
+		if val, err := database.GetSystemConfig("aster_agent_code"); err == nil && val != "" {
+			logger.Infof("✓ 使用數據庫配置的 Aster Agent Code: %s", val)
+			return val
+		}
+	}
 
 	// 優先級 2: 從環境變數讀取
 	if envCode := os.Getenv("NOFX_ASTER_AGENT_CODE"); envCode != "" {
@@ -265,17 +271,23 @@ func asterCreateBrokerApiKey(token, user, privateKeyHex string, client *http.Cli
 }
 
 // setAsterAgentCodeInDB stores Agent Code to database
-// Note: Disabled for pro branch compatibility - use env var NOFX_ASTER_AGENT_CODE instead
-func setAsterAgentCodeInDB(database interface{}, agentCode string) error {
-	// TODO: Add store adapter for database config storage
-	logger.Warnf("Database storage disabled, use NOFX_ASTER_AGENT_CODE env var instead")
+func setAsterAgentCodeInDB(database *store.Store, agentCode string) error {
+	if database == nil {
+		return fmt.Errorf("數據庫未初始化")
+	}
+
+	if err := database.SetSystemConfig("aster_agent_code", agentCode); err != nil {
+		return fmt.Errorf("保存 Agent Code 到數據庫失敗: %w", err)
+	}
+
+	logger.Infof("✓ Agent Code 已保存到數據庫")
 	return nil
 }
 
 // ========== 公開函數（供 API handler 調用） ==========
 
 // GetAsterAgentCodePublic 公開版本的 getAsterAgentCode
-func GetAsterAgentCodePublic(database interface{}) string {
+func GetAsterAgentCodePublic(database *store.Store) string {
 	return getAsterAgentCode(database)
 }
 

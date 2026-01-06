@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 
 	"nofx/auth"
 	"nofx/backtest"
@@ -3651,31 +3650,51 @@ func (s *Server) handleConnectAsterWallet(c *gin.Context) {
 		return
 	}
 
-	// Get Agent Code from environment variable
-	agentCode := os.Getenv("NOFX_ASTER_AGENT_CODE")
+	// Get Agent Code using the trader package (supports DB > ENV > default)
+	agentCode := trader.GetAsterAgentCodePublic(s.store)
 	if agentCode == "" {
 		agentCode = "3E58dc" // Default agent code
 	}
 
-	// In the simplified public repo version, we just acknowledge the connection
-	// The actual API Wallet creation happens when the user configures the exchange
-	// This endpoint primarily serves to:
-	// 1. Validate the wallet address
-	// 2. Return the configured Agent Code for frontend display
-	// 3. Indicate that the wallet connection flow is ready
-	//
-	// Full implementation (with database) is available in the private repo
+	// Get user ID from JWT context (if authenticated)
+	userID := ""
+	if userValue, exists := c.Get("user_id"); exists {
+		if id, ok := userValue.(string); ok {
+			userID = id
+		}
+	}
 
 	logger.Infof("Aster wallet connection request: %s", walletAddr)
 	logger.Infof("Agent Code configured: %s", agentCode)
+	if userID != "" {
+		logger.Infof("User ID: %s", userID)
+	}
+
+	// If we have a user ID and store, check for existing Aster configuration
+	apiCreated := false
+	if userID != "" && s.store != nil {
+		exchange, err := s.store.Exchange().GetExchangeByType(userID, "aster")
+		if err == nil && exchange.AsterSigner != "" && string(exchange.AsterPrivateKey) != "" {
+			// Check wallet address match
+			if exchange.AsterUser != "" && strings.EqualFold(exchange.AsterUser, walletAddr) {
+				apiCreated = true
+				logger.Infof("Found existing API Wallet for user")
+			}
+		}
+	}
 
 	resp := ConnectAsterWalletResponse{
 		Success: true,
-		Message: "Wallet connected successfully. Please configure the exchange to complete setup.",
+		Message: "Wallet connected successfully.",
+	}
+	if apiCreated {
+		resp.Message = "Wallet connected. API Wallet already configured."
+	} else {
+		resp.Message = "Wallet connected successfully. Please configure the exchange to complete setup."
 	}
 	resp.Data.WalletAddress = walletAddr
 	resp.Data.AgentCode = agentCode
-	resp.Data.APICreated = false // Will be true when full flow is implemented
+	resp.Data.APICreated = apiCreated
 
 	c.JSON(http.StatusOK, resp)
 }
