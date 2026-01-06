@@ -5,7 +5,7 @@
  * 完全使用簽名模式，不需要用戶提供私鑰
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   connectAsterWallet,
   isMetaMaskInstalled,
@@ -22,8 +22,6 @@ interface AsterWalletConnectProps {
   onConnected?: (connection: AsterWalletConnection) => void;
   /** 連接失敗後的回調 */
   onError?: (error: Error) => void;
-  /** JWT token（受保護 API 需要） */
-  authToken?: string;
   /** 自定義樣式類名 */
   className?: string;
   /** 是否顯示詳細信息 */
@@ -37,7 +35,6 @@ interface AsterWalletConnectProps {
 export function AsterWalletConnect({
   onConnected,
   onError,
-  authToken,
   className = '',
   showDetails = true,
 }: AsterWalletConnectProps) {
@@ -90,7 +87,7 @@ export function AsterWalletConnect({
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       // 執行完整連接流程
-      const result = await connectAsterWallet(authToken);
+      const result = await connectAsterWallet();
 
       setConnection(result);
       setConnected(true);
