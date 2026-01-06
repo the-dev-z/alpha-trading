@@ -1,217 +1,154 @@
-/**
- * Aster Wallet 自動生成模式連接庫
- *
- * 流程：
- * 1. 連接 MetaMask 獲取錢包地址
- * 2. 發送主錢包地址到後端 API
- * 3. 後端自動生成 API Wallet 並完成登入/綁定
- */
+import { httpClient } from './httpClient'
 
-// ============================================================================
-// 類型定義
-// ============================================================================
+export type AsterNonceType = 'WEB3_LOGIN' | 'CREATE_API_KEY'
 
 export interface AsterWalletConnection {
-  success: boolean;
-  walletAddress: string;
-  agentCode: string;
-  apiCreated: boolean;
-  message?: string;
+  walletAddress: string
+  agentCode: string
+  apiCreated: boolean
+  message?: string
 }
 
-interface AsterNonceResponse {
-  code: string;
-  message?: string;
-  msg?: string;
-  data: {
-    nonce: string;
-  };
+interface AsterNonceResponsePayload {
+  success: boolean
+  message?: string
+  data?: {
+    nonce?: string
+  }
 }
 
-// ============================================================================
-// Aster API 交互
-// ============================================================================
+interface AsterConnectResponsePayload {
+  success: boolean
+  message?: string
+  data?: {
+    wallet_address?: string
+    agent_code?: string
+    api_created?: boolean
+  }
+}
 
-/**
- * 從 Aster API 獲取 nonce
- * @param walletAddress 錢包地址
- * @param type 類型："WEB3_LOGIN" 或 "CREATE_API_KEY"
- */
+type EthereumProvider = {
+  request: (args: { method: string; params?: unknown[] }) => Promise<any>
+  isMetaMask?: boolean
+}
+
+function getEthereumProvider(): EthereumProvider | null {
+  if (typeof window === 'undefined') return null
+  return (window as any).ethereum ?? null
+}
+
+function normalizeError(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message
+  if (typeof err === 'string' && err.trim()) return err
+  return fallback
+}
+
+async function requestWalletAddress(): Promise<string> {
+  const provider = getEthereumProvider()
+  if (!provider) {
+    throw new Error('MetaMask not available')
+  }
+  const accounts = await provider.request({ method: 'eth_requestAccounts' })
+  if (!accounts || !Array.isArray(accounts) || accounts.length === 0) {
+    throw new Error('Failed to fetch wallet address')
+  }
+  return String(accounts[0])
+}
+
+async function signMessage(walletAddress: string, message: string): Promise<string> {
+  const provider = getEthereumProvider()
+  if (!provider) {
+    throw new Error('MetaMask not available')
+  }
+  return provider.request({
+    method: 'personal_sign',
+    params: [message, walletAddress],
+  })
+}
+
 async function getAsterNonce(
   walletAddress: string,
-  type: 'WEB3_LOGIN' | 'CREATE_API_KEY'
+  nonceType: AsterNonceType
 ): Promise<string> {
-  const baseURL = 'https://www.asterdex.com';
-  const endpoint = '/bapi/futures/v1/public/future/web3/get-nonce';
+  const response = await httpClient.post<AsterNonceResponsePayload>(
+    '/api/aster/nonce',
+    {
+      wallet_address: walletAddress,
+      nonce_type: nonceType,
+    }
+  )
 
-  const response = await fetch(baseURL + endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      sourceAddr: walletAddress,
-      network: '56', // BSC Chain ID
-      type: type,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to get nonce: ${response.statusText}`);
+  if (!response.success || !response.data) {
+    throw new Error(response.message || 'Failed to get nonce')
   }
-
-  const data: AsterNonceResponse = await response.json();
-
-  if (data.code !== '000000') {
-    const errorMessage = data.message || data.msg || 'Unknown Aster API error';
-    throw new Error(`Aster API error: ${errorMessage}`);
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to get nonce')
   }
-
-  return data.data.nonce;
+  const nonce = response.data.data?.nonce
+  if (!nonce) {
+    throw new Error('Nonce not returned')
+  }
+  return nonce
 }
 
-/**
- * 使用 MetaMask 簽名消息
- * @param message 要簽名的消息
- * @param walletAddress 簽名者地址
- */
-async function signWithMetaMask(
-  message: string,
-  walletAddress: string
-): Promise<string> {
-  // 檢查 MetaMask
-  if (!window.ethereum) {
-    throw new Error('請安裝 MetaMask 擴展！');
+export async function connectAsterWallet(): Promise<AsterWalletConnection> {
+  const walletAddress = await requestWalletAddress()
+
+  const loginNonce = await getAsterNonce(walletAddress, 'WEB3_LOGIN')
+  const loginMessage = `You are signing into Astherus ${loginNonce}`
+  const loginSignature = await signMessage(walletAddress, loginMessage)
+
+  const createNonce = await getAsterNonce(walletAddress, 'CREATE_API_KEY')
+  const createMessage = `You are signing into Astherus ${createNonce}`
+  const createSignature = await signMessage(walletAddress, createMessage)
+
+  const response = await httpClient.post<AsterConnectResponsePayload>(
+    '/api/aster/connect',
+    {
+      wallet_address: walletAddress,
+      login_signature: loginSignature,
+      login_nonce: loginNonce,
+      create_signature: createSignature,
+      create_nonce: createNonce,
+    }
+  )
+
+  if (!response.success || !response.data) {
+    throw new Error(response.message || 'Failed to connect Aster wallet')
+  }
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to connect Aster wallet')
   }
 
-  try {
-    // 使用 eth_sign 方法（EIP-191 標準）
-    const signature = await window.ethereum.request({
-      method: 'personal_sign',
-      params: [message, walletAddress],
-    });
-
-    return signature;
-  } catch (error: any) {
-    if (error.code === 4001) {
-      throw new Error('用戶拒絕簽名');
-    }
-    throw error;
-  }
-}
-
-// ============================================================================
-// 主要連接函數
-// ============================================================================
-
-/**
- * 連接 Aster 錢包（API Wallet 自動生成模式）
- *
- * 用戶只需提供主錢包地址，後端處理所有簽名與 API Wallet 生成。
- */
-export async function connectAsterWallet(
-  authToken?: string
-): Promise<AsterWalletConnection> {
-  try {
-    // ========================================
-    // 步驟 1: 連接 MetaMask
-    // ========================================
-    if (!window.ethereum) {
-      throw new Error('請安裝 MetaMask 擴展！');
-    }
-
-    // 請求連接錢包
-    const accounts = await window.ethereum.request({
-      method: 'eth_requestAccounts',
-    });
-
-    if (!accounts || accounts.length === 0) {
-      throw new Error('未能獲取錢包地址');
-    }
-
-    const walletAddress = accounts[0];
-    console.log('📱 已連接錢包:', walletAddress);
-
-    // ========================================
-    // 步驟 2: 發送到後端 API
-    // ========================================
-    console.log('📡 發送錢包地址到後端...');
-
-    const response = await fetch('/api/aster/connect', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      },
-      body: JSON.stringify({
-        wallet_address: walletAddress,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `後端錯誤: ${response.statusText}`
-      );
-    }
-
-    const result = await response.json();
-
-    console.log('✅ Aster 錢包連接成功！');
-
-    return {
-      success: result.success,
-      walletAddress: walletAddress,
-      agentCode: result.data?.agent_code || '3E58dc',
-      apiCreated: result.data?.api_created ?? false,
-      message: result.message,
-    };
-  } catch (error) {
-    console.error('❌ 連接失敗:', error);
-    throw error;
+  return {
+    walletAddress: response.data.data?.wallet_address || walletAddress,
+    agentCode: response.data.data?.agent_code || '',
+    apiCreated: response.data.data?.api_created ?? false,
+    message: response.data.message,
   }
 }
 
-// ============================================================================
-// 工具函數
-// ============================================================================
-
-/**
- * 檢查 MetaMask 是否已安裝
- */
 export function isMetaMaskInstalled(): boolean {
-  return typeof window !== 'undefined' && Boolean(window.ethereum);
+  const provider = getEthereumProvider()
+  return Boolean(provider)
 }
 
-/**
- * 獲取當前連接的錢包地址（如果有）
- */
 export async function getCurrentWalletAddress(): Promise<string | null> {
-  if (!window.ethereum) {
-    return null;
-  }
-
+  const provider = getEthereumProvider()
+  if (!provider) return null
   try {
-    const accounts = await window.ethereum.request({
-      method: 'eth_accounts',
-    });
-    return accounts && accounts.length > 0 ? accounts[0] : null;
-  } catch {
-    return null;
+    const accounts = await provider.request({ method: 'eth_accounts' })
+    if (!accounts || !Array.isArray(accounts) || accounts.length === 0) {
+      return null
+    }
+    return String(accounts[0])
+  } catch (err) {
+    throw new Error(normalizeError(err, 'Failed to read wallet address'))
   }
 }
-
-// ============================================================================
-// TypeScript 類型擴展
-// ============================================================================
 
 declare global {
   interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
-      isMetaMask?: boolean;
-      on?: (event: string, callback: (...args: any[]) => void) => void;
-      removeListener?: (event: string, callback: (...args: any[]) => void) => void;
-    };
+    ethereum?: EthereumProvider
   }
 }

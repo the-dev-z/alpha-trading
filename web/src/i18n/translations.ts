@@ -358,10 +358,33 @@ export const translations = {
     enterHyperliquidMainWalletAddress: 'Enter Main wallet address',
     hyperliquidMainWalletAddressDesc:
       'Main wallet address that holds your trading funds (never expose its private key)',
+    hyperliquidAgentConnectTitle: 'Hyperliquid Agent Wallet (MetaMask)',
+    hyperliquidAgentConnectDesc:
+      'Create an agent wallet on the server and authorize with EIP-712 signatures. Main wallet private key never leaves MetaMask.',
+    hyperliquidAgentCreateAction: 'Create Agent Wallet',
+    hyperliquidAgentAuthorizeAction: 'Authorize Agent',
+    hyperliquidAgentAuthorizeBuilderAction: 'Authorize Builder Fee',
+    hyperliquidAgentActionLoading: 'Processing...',
+    hyperliquidAgentConnectUnavailable: 'MetaMask not detected',
+    hyperliquidAgentCreateSuccess: 'Agent wallet created',
+    hyperliquidAgentAuthorizeSuccess: 'Agent wallet authorized',
+    hyperliquidBuilderFeeAuthorizeSuccess: 'Builder fee authorized',
+    hyperliquidAgentActionFailed: 'Hyperliquid action failed',
+    hyperliquidBuilderFeeRatePlaceholder: 'Builder fee rate (optional)',
+    hyperliquidBuilderFeeLabel: 'Builder Fee',
+    hyperliquidMainWalletRequired: 'Main wallet address is required',
     // Aster API Pro Configuration
     asterApiProTitle: 'Aster API Pro Wallet Configuration',
     asterApiProDesc:
       'Use API Pro wallet for secure trading: API wallet signs transactions, main wallet holds funds (never expose main wallet private key)',
+    asterConnectTitle: 'Aster Wallet Connect',
+    asterConnectDesc:
+      'Use MetaMask signatures to create API credentials automatically (no private key is uploaded).',
+    asterConnectAction: 'Connect with MetaMask',
+    asterConnectLoading: 'Connecting...',
+    asterConnectUnavailable: 'MetaMask not detected',
+    asterConnectFailed: 'Aster wallet connect failed',
+    asterConnectSuccess: 'Aster wallet connected',
     asterUserDesc:
       'Main wallet address - The EVM wallet address you use to log in to Aster (Note: Only EVM wallets are supported)',
     asterSignerDesc:
@@ -1558,10 +1581,33 @@ export const translations = {
     enterHyperliquidMainWalletAddress: '输入主钱包地址',
     hyperliquidMainWalletAddressDesc:
       '持有交易资金的主钱包地址（永不暴露其私钥）',
+    hyperliquidAgentConnectTitle: 'Hyperliquid 代理錢包（MetaMask）',
+    hyperliquidAgentConnectDesc:
+      '在伺服器建立代理錢包並用 EIP-712 簽名授權，主錢包私鑰不離開 MetaMask。',
+    hyperliquidAgentCreateAction: '建立代理錢包',
+    hyperliquidAgentAuthorizeAction: '授權代理錢包',
+    hyperliquidAgentAuthorizeBuilderAction: '授權 Builder Fee',
+    hyperliquidAgentActionLoading: '處理中...',
+    hyperliquidAgentConnectUnavailable: '未偵測到 MetaMask',
+    hyperliquidAgentCreateSuccess: '代理錢包已建立',
+    hyperliquidAgentAuthorizeSuccess: '代理錢包已授權',
+    hyperliquidBuilderFeeAuthorizeSuccess: 'Builder Fee 已授權',
+    hyperliquidAgentActionFailed: 'Hyperliquid 操作失敗',
+    hyperliquidBuilderFeeRatePlaceholder: 'Builder 費率（可選）',
+    hyperliquidBuilderFeeLabel: 'Builder Fee',
+    hyperliquidMainWalletRequired: '需要主錢包地址',
     // Aster API Pro 配置
     asterApiProTitle: 'Aster API Pro 代理钱包配置',
     asterApiProDesc:
       '使用 API Pro 代理钱包安全交易：代理钱包用于签名交易，主钱包持有资金（永不暴露主钱包私钥）',
+    asterConnectTitle: 'Aster 錢包連線',
+    asterConnectDesc:
+      '使用 MetaMask 簽名自動建立 API 憑證（不會上傳私鑰）。',
+    asterConnectAction: '使用 MetaMask 連線',
+    asterConnectLoading: '連線中...',
+    asterConnectUnavailable: '未偵測到 MetaMask',
+    asterConnectFailed: 'Aster 錢包連線失敗',
+    asterConnectSuccess: 'Aster 錢包已連線',
     asterUserDesc:
       '主钱包地址 - 您用于登录 Aster 的 EVM 钱包地址（仅支持 EVM 钱包）',
     asterSignerDesc:

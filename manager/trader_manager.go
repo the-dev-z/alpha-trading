@@ -9,6 +9,7 @@ import (
 	"nofx/store"
 	"nofx/trader"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -691,8 +692,26 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		traderConfig.BitgetSecretKey = string(exchangeCfg.SecretKey)
 		traderConfig.BitgetPassphrase = string(exchangeCfg.Passphrase)
 	case "hyperliquid":
-		traderConfig.HyperliquidPrivateKey = string(exchangeCfg.APIKey)
+		privateKey := strings.TrimSpace(string(exchangeCfg.APIKey))
+		useAgentWallet := false
+		builderAddress := ""
+		builderFeeRate := 0
+		if privateKey == "" && exchangeCfg.HyperliquidWalletAddr != "" {
+			agentWallet, err := st.AgentWallet().GetActiveByMainWallet(traderCfg.UserID, exchangeCfg.HyperliquidWalletAddr)
+			if err == nil && agentWallet != nil {
+				privateKey = strings.TrimSpace(string(agentWallet.EncryptedPrivateKey))
+				useAgentWallet = true
+				if agentWallet.BuilderFeeAuthorized && agentWallet.BuilderFeeMaxRate > 0 {
+					builderAddress = strings.TrimSpace(agentWallet.BuilderAddress)
+					builderFeeRate = agentWallet.BuilderFeeMaxRate
+				}
+			}
+		}
+		traderConfig.HyperliquidPrivateKey = privateKey
 		traderConfig.HyperliquidWalletAddr = exchangeCfg.HyperliquidWalletAddr
+		traderConfig.HyperliquidBuilderAddress = builderAddress
+		traderConfig.HyperliquidBuilderFeeRate = builderFeeRate
+		traderConfig.HyperliquidBuilderOverride = useAgentWallet
 	case "aster":
 		traderConfig.AsterUser = exchangeCfg.AsterUser
 		traderConfig.AsterSigner = exchangeCfg.AsterSigner

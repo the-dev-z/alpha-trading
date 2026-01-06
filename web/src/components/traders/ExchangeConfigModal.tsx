@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react'
 import type { Exchange } from '../../types'
 import { t, type Language } from '../../i18n/translations'
 import { api } from '../../lib/api'
+import { connectAsterWallet, isMetaMaskInstalled } from '../../lib/asterWallet'
+import {
+  authorizeHyperliquidAgent,
+  authorizeHyperliquidBuilderFee,
+  createHyperliquidAgentWallet,
+  getHyperliquidAgentStatus,
+  type HyperliquidAgentStatus,
+} from '../../lib/hyperliquidAgentWallet'
 import { getExchangeIcon } from '../ExchangeIcons'
 import {
   TwoStageKeyModal,
@@ -47,6 +55,7 @@ interface ExchangeConfigModalProps {
     lighterApiKeyPrivateKey?: string,
     lighterApiKeyIndex?: number
   ) => Promise<void>
+  onRefreshExchanges?: () => Promise<void>
   onDelete: (exchangeId: string) => void
   onClose: () => void
   language: Language
@@ -56,6 +65,7 @@ export function ExchangeConfigModal({
   allExchanges,
   editingExchangeId,
   onSave,
+  onRefreshExchanges,
   onDelete,
   onClose,
   language,
@@ -83,9 +93,20 @@ export function ExchangeConfigModal({
   const [asterUser, setAsterUser] = useState('')
   const [asterSigner, setAsterSigner] = useState('')
   const [asterPrivateKey, setAsterPrivateKey] = useState('')
+  const [asterConnectLoading, setAsterConnectLoading] = useState(false)
+  const [asterConnectError, setAsterConnectError] = useState('')
+  const [asterConnectAvailable, setAsterConnectAvailable] = useState(true)
 
   // Hyperliquid 特定字段
   const [hyperliquidWalletAddr, setHyperliquidWalletAddr] = useState('')
+  const [hyperliquidConnectAvailable, setHyperliquidConnectAvailable] =
+    useState(true)
+  const [hyperliquidAgentStatus, setHyperliquidAgentStatus] =
+    useState<HyperliquidAgentStatus | null>(null)
+  const [hyperliquidAgentAction, setHyperliquidAgentAction] = useState('')
+  const [hyperliquidAgentError, setHyperliquidAgentError] = useState('')
+  const [hyperliquidBuilderFeeRate, setHyperliquidBuilderFeeRate] =
+    useState('')
 
   // LIGHTER 特定字段
   const [lighterWalletAddr, setLighterWalletAddr] = useState('')
@@ -147,6 +168,10 @@ export function ExchangeConfigModal({
 
       // Hyperliquid 字段
       setHyperliquidWalletAddr(selectedExchange.hyperliquidWalletAddr || '')
+      setHyperliquidAgentStatus(null)
+      setHyperliquidAgentError('')
+      setHyperliquidAgentAction('')
+      setHyperliquidBuilderFeeRate('')
 
       // LIGHTER 字段
       setLighterWalletAddr(selectedExchange.lighterWalletAddr || '')
@@ -154,6 +179,12 @@ export function ExchangeConfigModal({
       setLighterApiKeyIndex(selectedExchange.lighterApiKeyIndex || 0)
     }
   }, [editingExchangeId, selectedExchange])
+
+  useEffect(() => {
+    const available = isMetaMaskInstalled()
+    setAsterConnectAvailable(available)
+    setHyperliquidConnectAvailable(available)
+  }, [])
 
   // 加载服务器IP（当选择binance时）
   useEffect(() => {
@@ -211,6 +242,163 @@ export function ExchangeConfigModal({
       toast.error(
         t('copyIPFailed', language) || `复制失败: ${ip}\n请手动复制此IP地址`
       )
+    }
+  }
+
+  const handleAsterConnect = async () => {
+    if (asterConnectLoading) return
+    if (!asterConnectAvailable) {
+      toast.error(t('asterConnectUnavailable', language))
+      return
+    }
+
+    setAsterConnectError('')
+    setAsterConnectLoading(true)
+    try {
+      const result = await connectAsterWallet()
+      toast.success(result.message || t('asterConnectSuccess', language))
+
+      if (onRefreshExchanges) {
+        await onRefreshExchanges()
+      }
+      onClose()
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : t('asterConnectFailed', language)
+      setAsterConnectError(message)
+      toast.error(message)
+    } finally {
+      setAsterConnectLoading(false)
+    }
+  }
+
+  const isHyperliquidBusy = hyperliquidAgentAction !== ''
+
+  const applyHyperliquidStatus = (status: HyperliquidAgentStatus | null) => {
+    setHyperliquidAgentStatus(status)
+    if (status?.builderFeeMaxRate) {
+      setHyperliquidBuilderFeeRate(String(status.builderFeeMaxRate))
+    }
+  }
+
+  const handleHyperliquidCreateAgentWallet = async () => {
+    if (isHyperliquidBusy) return
+    if (!hyperliquidConnectAvailable) {
+      toast.error(t('hyperliquidAgentConnectUnavailable', language))
+      return
+    }
+    if (!hyperliquidWalletAddr.trim()) {
+      toast.error(t('hyperliquidMainWalletRequired', language))
+      return
+    }
+
+    setHyperliquidAgentError('')
+    setHyperliquidAgentAction('create')
+    try {
+      const response = await createHyperliquidAgentWallet(
+        hyperliquidWalletAddr,
+        testnet ? 'Testnet' : 'Mainnet'
+      )
+      if (!response.success) {
+        throw new Error(response.message || t('hyperliquidAgentActionFailed', language))
+      }
+      toast.success(
+        response.message || t('hyperliquidAgentCreateSuccess', language)
+      )
+      const status = await getHyperliquidAgentStatus(hyperliquidWalletAddr)
+      applyHyperliquidStatus(status)
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : t('hyperliquidAgentActionFailed', language)
+      setHyperliquidAgentError(message)
+      toast.error(message)
+    } finally {
+      setHyperliquidAgentAction('')
+    }
+  }
+
+  const handleHyperliquidAuthorizeAgent = async () => {
+    if (isHyperliquidBusy) return
+    if (!hyperliquidConnectAvailable) {
+      toast.error(t('hyperliquidAgentConnectUnavailable', language))
+      return
+    }
+    if (!hyperliquidWalletAddr.trim()) {
+      toast.error(t('hyperliquidMainWalletRequired', language))
+      return
+    }
+
+    setHyperliquidAgentError('')
+    setHyperliquidAgentAction('authorize')
+    try {
+      const response = await authorizeHyperliquidAgent(
+        hyperliquidWalletAddr,
+        testnet ? 'Testnet' : 'Mainnet'
+      )
+      if (!response.success) {
+        throw new Error(response.message || t('hyperliquidAgentActionFailed', language))
+      }
+      toast.success(
+        response.message || t('hyperliquidAgentAuthorizeSuccess', language)
+      )
+      const status = await getHyperliquidAgentStatus(hyperliquidWalletAddr)
+      applyHyperliquidStatus(status)
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : t('hyperliquidAgentActionFailed', language)
+      setHyperliquidAgentError(message)
+      toast.error(message)
+    } finally {
+      setHyperliquidAgentAction('')
+    }
+  }
+
+  const handleHyperliquidAuthorizeBuilderFee = async () => {
+    if (isHyperliquidBusy) return
+    if (!hyperliquidConnectAvailable) {
+      toast.error(t('hyperliquidAgentConnectUnavailable', language))
+      return
+    }
+    if (!hyperliquidWalletAddr.trim()) {
+      toast.error(t('hyperliquidMainWalletRequired', language))
+      return
+    }
+
+    const feeRateValue = Number.parseInt(hyperliquidBuilderFeeRate, 10)
+    const maxFeeRate =
+      Number.isNaN(feeRateValue) || feeRateValue < 0 ? undefined : feeRateValue
+
+    setHyperliquidAgentError('')
+    setHyperliquidAgentAction('builder')
+    try {
+      const response = await authorizeHyperliquidBuilderFee(
+        hyperliquidWalletAddr,
+        testnet ? 'Testnet' : 'Mainnet',
+        maxFeeRate
+      )
+      if (!response.success) {
+        throw new Error(response.message || t('hyperliquidAgentActionFailed', language))
+      }
+      toast.success(
+        response.message || t('hyperliquidBuilderFeeAuthorizeSuccess', language)
+      )
+      const status = await getHyperliquidAgentStatus(hyperliquidWalletAddr)
+      applyHyperliquidStatus(status)
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : t('hyperliquidAgentActionFailed', language)
+      setHyperliquidAgentError(message)
+      toast.error(message)
+    } finally {
+      setHyperliquidAgentAction('')
     }
   }
 
@@ -805,6 +993,60 @@ export function ExchangeConfigModal({
                       </div>
                     </div>
 
+                    {/* Aster 连接入口 */}
+                    <div
+                      className="p-3 rounded mb-4"
+                      style={{
+                        background: 'rgba(240, 185, 11, 0.08)',
+                        border: '1px dashed rgba(240, 185, 11, 0.3)',
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div
+                            className="text-sm font-semibold mb-1"
+                            style={{ color: '#F0B90B' }}
+                          >
+                            {t('asterConnectTitle', language)}
+                          </div>
+                          <div
+                            className="text-xs"
+                            style={{ color: '#848E9C', lineHeight: '1.5' }}
+                          >
+                            {t('asterConnectDesc', language)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAsterConnect}
+                          disabled={asterConnectLoading || !asterConnectAvailable}
+                          className="px-3 py-2 rounded text-xs font-semibold transition-all hover:scale-105"
+                          style={{
+                            background:
+                              asterConnectLoading || !asterConnectAvailable
+                                ? 'rgba(43, 49, 57, 0.6)'
+                                : 'rgba(240, 185, 11, 0.2)',
+                            color: asterConnectLoading || !asterConnectAvailable ? '#848E9C' : '#F0B90B',
+                            border: '1px solid rgba(240, 185, 11, 0.3)',
+                          }}
+                        >
+                          {asterConnectLoading
+                            ? t('asterConnectLoading', language)
+                            : t('asterConnectAction', language)}
+                        </button>
+                      </div>
+                      {!asterConnectAvailable && (
+                        <div className="text-xs mt-2" style={{ color: '#F0B90B' }}>
+                          {t('asterConnectUnavailable', language)}
+                        </div>
+                      )}
+                      {asterConnectError && (
+                        <div className="text-xs mt-2" style={{ color: '#F6465D' }}>
+                          {asterConnectError}
+                        </div>
+                      )}
+                    </div>
+
                     {/* 主钱包地址 */}
                     <div>
                       <label
@@ -942,6 +1184,142 @@ export function ExchangeConfigModal({
                           </div>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Agent Wallet Actions */}
+                    <div
+                      className="p-3 rounded mb-4"
+                      style={{
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div
+                            className="text-sm font-semibold mb-1"
+                            style={{ color: '#93C5FD' }}
+                          >
+                            {t('hyperliquidAgentConnectTitle', language)}
+                          </div>
+                          <div
+                            className="text-xs"
+                            style={{ color: '#848E9C', lineHeight: '1.5' }}
+                          >
+                            {t('hyperliquidAgentConnectDesc', language)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleHyperliquidCreateAgentWallet}
+                          disabled={isHyperliquidBusy || !hyperliquidConnectAvailable}
+                          className="px-3 py-2 rounded text-xs font-semibold transition-all hover:scale-105"
+                          style={{
+                            background:
+                              isHyperliquidBusy || !hyperliquidConnectAvailable
+                                ? 'rgba(43, 49, 57, 0.6)'
+                                : 'rgba(59, 130, 246, 0.2)',
+                            color:
+                              isHyperliquidBusy || !hyperliquidConnectAvailable
+                                ? '#848E9C'
+                                : '#93C5FD',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {hyperliquidAgentAction === 'create'
+                            ? t('hyperliquidAgentActionLoading', language)
+                            : t('hyperliquidAgentCreateAction', language)}
+                        </button>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={handleHyperliquidAuthorizeAgent}
+                          disabled={isHyperliquidBusy || !hyperliquidConnectAvailable}
+                          className="px-3 py-2 rounded text-xs font-semibold transition-all hover:scale-105"
+                          style={{
+                            background:
+                              isHyperliquidBusy || !hyperliquidConnectAvailable
+                                ? 'rgba(43, 49, 57, 0.6)'
+                                : 'rgba(59, 130, 246, 0.2)',
+                            color:
+                              isHyperliquidBusy || !hyperliquidConnectAvailable
+                                ? '#848E9C'
+                                : '#93C5FD',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {hyperliquidAgentAction === 'authorize'
+                            ? t('hyperliquidAgentActionLoading', language)
+                            : t('hyperliquidAgentAuthorizeAction', language)}
+                        </button>
+                        <div className="flex flex-1 gap-2 min-w-[220px]">
+                          <input
+                            type="number"
+                            value={hyperliquidBuilderFeeRate}
+                            onChange={(e) =>
+                              setHyperliquidBuilderFeeRate(e.target.value)
+                            }
+                            placeholder={t(
+                              'hyperliquidBuilderFeeRatePlaceholder',
+                              language
+                            )}
+                            className="w-full px-3 py-2 rounded text-xs"
+                            style={{
+                              background: '#0B0E11',
+                              border: '1px solid #2B3139',
+                              color: '#EAECEF',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleHyperliquidAuthorizeBuilderFee}
+                            disabled={isHyperliquidBusy || !hyperliquidConnectAvailable}
+                            className="px-3 py-2 rounded text-xs font-semibold transition-all hover:scale-105"
+                            style={{
+                              background:
+                                isHyperliquidBusy || !hyperliquidConnectAvailable
+                                  ? 'rgba(43, 49, 57, 0.6)'
+                                  : 'rgba(59, 130, 246, 0.2)',
+                              color:
+                                isHyperliquidBusy || !hyperliquidConnectAvailable
+                                  ? '#848E9C'
+                                  : '#93C5FD',
+                              border: '1px solid rgba(59, 130, 246, 0.3)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {hyperliquidAgentAction === 'builder'
+                              ? t('hyperliquidAgentActionLoading', language)
+                              : t(
+                                  'hyperliquidAgentAuthorizeBuilderAction',
+                                  language
+                                )}
+                          </button>
+                        </div>
+                      </div>
+                      {!hyperliquidConnectAvailable && (
+                        <div className="text-xs mt-2" style={{ color: '#93C5FD' }}>
+                          {t('hyperliquidAgentConnectUnavailable', language)}
+                        </div>
+                      )}
+                      {hyperliquidAgentError && (
+                        <div className="text-xs mt-2" style={{ color: '#F6465D' }}>
+                          {hyperliquidAgentError}
+                        </div>
+                      )}
+                      {hyperliquidAgentStatus && (
+                        <div className="text-xs mt-2" style={{ color: '#848E9C' }}>
+                          {t('status', language)}: {hyperliquidAgentStatus.status}
+                          {' · '}
+                          {t('hyperliquidBuilderFeeLabel', language)}:{' '}
+                          {hyperliquidAgentStatus.builderFeeAuthorized
+                            ? t('enabled', language)
+                            : t('disabled', language)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Agent Private Key 字段 */}

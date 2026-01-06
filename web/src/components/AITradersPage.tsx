@@ -702,6 +702,15 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     }
   }
 
+  const refreshExchangeConfigs = async () => {
+    try {
+      const refreshedExchanges = await api.getExchangeConfigs()
+      setAllExchanges(refreshedExchanges)
+    } catch (error) {
+      console.error('Failed to refresh exchange configs:', error)
+    }
+  }
+
   const handleSaveExchangeConfig = async (
     exchangeId: string | null, // null for creating new account
     exchangeType: string,
@@ -1371,6 +1380,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
             allExchanges={allExchanges}
             editingExchangeId={editingExchange}
             onSave={handleSaveExchangeConfig}
+            onRefreshExchanges={refreshExchangeConfigs}
             onDelete={handleDeleteExchangeConfig}
             onClose={() => {
               setShowExchangeModal(false)

@@ -67,6 +67,9 @@ type AutoTraderConfig struct {
 	HyperliquidPrivateKey string
 	HyperliquidWalletAddr string
 	HyperliquidTestnet    bool
+	HyperliquidBuilderAddress string
+	HyperliquidBuilderFeeRate int
+	HyperliquidBuilderOverride bool
 
 	// Aster configuration
 	AsterUser       string // Aster main wallet address
@@ -254,12 +257,22 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		trader = NewBitgetTrader(config.BitgetAPIKey, config.BitgetSecretKey, config.BitgetPassphrase)
 	case "hyperliquid":
 		logger.Infof("🏦 [%s] Using Hyperliquid trading", config.Name)
+		builderAddress := strings.TrimSpace(config.HyperliquidBuilderAddress)
+		builderFeeRate := config.HyperliquidBuilderFeeRate
+		if !config.HyperliquidBuilderOverride {
+			if builderAddress == "" {
+				builderAddress = hyperliquidBuilderAddress
+			}
+			if builderFeeRate == 0 {
+				builderFeeRate = hyperliquidBuilderFeeRate
+			}
+		}
 		trader, err = NewHyperliquidTrader(
 			config.HyperliquidPrivateKey,
 			config.HyperliquidWalletAddr,
 			config.HyperliquidTestnet,
-			hyperliquidBuilderAddress,
-			hyperliquidBuilderFeeRate,
+			builderAddress,
+			builderFeeRate,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize Hyperliquid trader: %w", err)
@@ -2228,4 +2241,3 @@ func getSideFromAction(action string) string {
 		return "BUY"
 	}
 }
-

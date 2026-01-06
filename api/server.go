@@ -169,7 +169,17 @@ func (s *Server) setupRoutes() {
 			protected.PUT("/exchanges", s.handleUpdateExchangeConfigs)
 			protected.DELETE("/exchanges/:id", s.handleDeleteExchange)
 
+			// Hyperliquid agent wallet
+			protected.POST("/agent/create", s.handleCreateAgentWallet)
+			protected.GET("/agent/status", s.handleGetAgentWallet)
+			protected.POST("/agent/typed-data", s.handleGetAgentTypedData)
+			protected.POST("/agent/authorize", s.handleAuthorizeAgentWallet)
+			protected.POST("/agent/authorize-builder-fee", s.handleAuthorizeBuilderFee)
+			protected.POST("/agent/confirm-builder-fee", s.handleConfirmBuilderFee)
+			protected.GET("/agent/verify-authorization", s.handleVerifyAgentAuthorization)
+
 			// Aster wallet connection
+			protected.POST("/aster/nonce", s.handleGetAsterNonce)
 			protected.POST("/aster/connect", s.handleConnectAsterWallet)
 
 			// Strategy management
@@ -584,17 +594,18 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		// Use ExchangeType (e.g., "binance") instead of ID (UUID)
 		// Convert EncryptedString fields to string
 		switch exchangeCfg.ExchangeType {
-		case "binance":
-			tempTrader = trader.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID)
-		case "hyperliquid":
-			tempTrader, createErr = trader.NewHyperliquidTrader(
-				string(exchangeCfg.APIKey), // private key
-				exchangeCfg.HyperliquidWalletAddr,
-				exchangeCfg.Testnet,
-				"", // builder address (configured via env for auto trader)
-				0,  // builder fee rate
-			)
-		case "aster":
+	case "binance":
+		tempTrader = trader.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID)
+	case "hyperliquid":
+		privateKey, builderAddress, builderFeeRate := s.resolveHyperliquidCredentials(userID, exchangeCfg)
+		tempTrader, createErr = trader.NewHyperliquidTrader(
+			privateKey,
+			exchangeCfg.HyperliquidWalletAddr,
+			exchangeCfg.Testnet,
+			builderAddress,
+			builderFeeRate,
+		)
+	case "aster":
 			tempTrader, createErr = trader.NewAsterTrader(
 				exchangeCfg.AsterUser,
 				exchangeCfg.AsterSigner,
@@ -1133,12 +1144,13 @@ func (s *Server) handleSyncBalance(c *gin.Context) {
 	case "binance":
 		tempTrader = trader.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID)
 	case "hyperliquid":
+		privateKey, builderAddress, builderFeeRate := s.resolveHyperliquidCredentials(userID, exchangeCfg)
 		tempTrader, createErr = trader.NewHyperliquidTrader(
-			string(exchangeCfg.APIKey),
+			privateKey,
 			exchangeCfg.HyperliquidWalletAddr,
 			exchangeCfg.Testnet,
-			"", // builder address
-			0,  // builder fee rate
+			builderAddress,
+			builderFeeRate,
 		)
 	case "aster":
 		tempTrader, createErr = trader.NewAsterTrader(
@@ -1287,12 +1299,13 @@ func (s *Server) handleClosePosition(c *gin.Context) {
 	case "binance":
 		tempTrader = trader.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID)
 	case "hyperliquid":
+		privateKey, builderAddress, builderFeeRate := s.resolveHyperliquidCredentials(userID, exchangeCfg)
 		tempTrader, createErr = trader.NewHyperliquidTrader(
-			string(exchangeCfg.APIKey),
+			privateKey,
 			exchangeCfg.HyperliquidWalletAddr,
 			exchangeCfg.Testnet,
-			"", // builder address
-			0,  // builder fee rate
+			builderAddress,
+			builderFeeRate,
 		)
 	case "aster":
 		tempTrader, createErr = trader.NewAsterTrader(
@@ -3612,9 +3625,28 @@ func (s *Server) handleGetPublicTraderConfig(c *gin.Context) {
 // Aster Wallet Connection
 // ============================================================================
 
+// AsterNonceRequest request body for Aster nonce
+type AsterNonceRequest struct {
+	WalletAddress string `json:"wallet_address" binding:"required"`
+	NonceType     string `json:"nonce_type" binding:"required"` // WEB3_LOGIN or CREATE_API_KEY
+}
+
+// AsterNonceResponse response for Aster nonce
+type AsterNonceResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    struct {
+		Nonce string `json:"nonce"`
+	} `json:"data"`
+}
+
 // ConnectAsterWalletRequest request body for Aster wallet connection
 type ConnectAsterWalletRequest struct {
-	WalletAddress string `json:"wallet_address" binding:"required"`
+	WalletAddress   string `json:"wallet_address" binding:"required"`
+	LoginSignature  string `json:"login_signature"`
+	LoginNonce      string `json:"login_nonce"`
+	CreateSignature string `json:"create_signature"`
+	CreateNonce     string `json:"create_nonce"`
 }
 
 // ConnectAsterWalletResponse response for Aster wallet connection
@@ -3628,8 +3660,57 @@ type ConnectAsterWalletResponse struct {
 	} `json:"data"`
 }
 
+// handleGetAsterNonce handles Aster nonce request
+func (s *Server) handleGetAsterNonce(c *gin.Context) {
+	var req AsterNonceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, AsterNonceResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	walletAddr := strings.TrimSpace(req.WalletAddress)
+	if !strings.HasPrefix(walletAddr, "0x") || len(walletAddr) != 42 {
+		c.JSON(http.StatusBadRequest, AsterNonceResponse{
+			Success: false,
+			Message: "Invalid wallet address format",
+		})
+		return
+	}
+
+	nonceType := strings.TrimSpace(req.NonceType)
+	if nonceType != "WEB3_LOGIN" && nonceType != "CREATE_API_KEY" {
+		c.JSON(http.StatusBadRequest, AsterNonceResponse{
+			Success: false,
+			Message: "Invalid nonce type",
+		})
+		return
+	}
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	nonce, err := trader.AsterGetNonce(walletAddr, nonceType, client)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, AsterNonceResponse{
+			Success: false,
+			Message: "Failed to get nonce: " + err.Error(),
+		})
+		return
+	}
+
+	resp := AsterNonceResponse{
+		Success: true,
+		Message: "Nonce generated",
+	}
+	resp.Data.Nonce = nonce
+	c.JSON(http.StatusOK, resp)
+}
+
 // handleConnectAsterWallet handles Aster wallet connection
-// This endpoint receives a wallet address and initiates the API Wallet auto-generation flow
+// This endpoint supports both inquiry-only and signature-based credential creation
 func (s *Server) handleConnectAsterWallet(c *gin.Context) {
 	var req ConnectAsterWalletRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -3641,7 +3722,7 @@ func (s *Server) handleConnectAsterWallet(c *gin.Context) {
 	}
 
 	// Validate wallet address format (basic check)
-	walletAddr := strings.TrimSpace(req.WalletAddress)
+	walletAddr := strings.ToLower(strings.TrimSpace(req.WalletAddress))
 	if !strings.HasPrefix(walletAddr, "0x") || len(walletAddr) != 42 {
 		c.JSON(http.StatusBadRequest, ConnectAsterWalletResponse{
 			Success: false,
@@ -3668,6 +3749,88 @@ func (s *Server) handleConnectAsterWallet(c *gin.Context) {
 	logger.Infof("Agent Code configured: %s", agentCode)
 	if userID != "" {
 		logger.Infof("User ID: %s", userID)
+	}
+
+	hasSignatureFlow := req.LoginSignature != "" || req.CreateSignature != "" || req.LoginNonce != "" || req.CreateNonce != ""
+	if hasSignatureFlow {
+		if req.LoginSignature == "" || req.CreateSignature == "" || req.LoginNonce == "" || req.CreateNonce == "" {
+			c.JSON(http.StatusBadRequest, ConnectAsterWalletResponse{
+				Success: false,
+				Message: "Missing signature payload for Aster connect",
+			})
+			return
+		}
+
+		if userID == "" {
+			c.JSON(http.StatusUnauthorized, ConnectAsterWalletResponse{
+				Success: false,
+				Message: "Unauthorized",
+			})
+			return
+		}
+
+		if s.store == nil {
+			c.JSON(http.StatusInternalServerError, ConnectAsterWalletResponse{
+				Success: false,
+				Message: "Exchange store not available",
+			})
+			return
+		}
+
+		client := &http.Client{
+			Timeout: 30 * time.Second,
+		}
+		token, err := trader.AsterLoginWithSignature(
+			walletAddr,
+			req.LoginSignature,
+			req.LoginNonce,
+			agentCode,
+			client,
+		)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ConnectAsterWalletResponse{
+				Success: false,
+				Message: "Aster login failed: " + err.Error(),
+			})
+			return
+		}
+
+		apiKey, secretKey, err := trader.AsterCreateBrokerApiKeyWithSignature(
+			token,
+			walletAddr,
+			req.CreateSignature,
+			req.CreateNonce,
+			client,
+		)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ConnectAsterWalletResponse{
+				Success: false,
+				Message: "Aster API key creation failed: " + err.Error(),
+			})
+			return
+		}
+
+		if err := s.store.Exchange().SaveAsterCredentials(userID, walletAddr, apiKey, secretKey); err != nil {
+			c.JSON(http.StatusInternalServerError, ConnectAsterWalletResponse{
+				Success: false,
+				Message: "Failed to save Aster credentials: " + err.Error(),
+			})
+			return
+		}
+
+		if err := s.traderManager.LoadUserTradersFromStore(s.store, userID); err != nil {
+			logger.Infof("⚠️ Failed to reload user traders into memory: %v", err)
+		}
+
+		resp := ConnectAsterWalletResponse{
+			Success: true,
+			Message: "Wallet connected and API credentials saved.",
+		}
+		resp.Data.WalletAddress = walletAddr
+		resp.Data.AgentCode = agentCode
+		resp.Data.APICreated = true
+		c.JSON(http.StatusOK, resp)
+		return
 	}
 
 	// If we have a user ID and store, check for existing Aster configuration
