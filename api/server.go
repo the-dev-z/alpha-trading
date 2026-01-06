@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+
 	"nofx/auth"
 	"nofx/backtest"
 	"nofx/config"
@@ -167,6 +169,9 @@ func (s *Server) setupRoutes() {
 			protected.POST("/exchanges", s.handleCreateExchange)
 			protected.PUT("/exchanges", s.handleUpdateExchangeConfigs)
 			protected.DELETE("/exchanges/:id", s.handleDeleteExchange)
+
+			// Aster wallet connection
+			protected.POST("/aster/connect", s.handleConnectAsterWallet)
 
 			// Strategy management
 			protected.GET("/strategies", s.handleGetStrategies)
@@ -3602,4 +3607,75 @@ func (s *Server) handleGetPublicTraderConfig(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+// ============================================================================
+// Aster Wallet Connection
+// ============================================================================
+
+// ConnectAsterWalletRequest request body for Aster wallet connection
+type ConnectAsterWalletRequest struct {
+	WalletAddress string `json:"wallet_address" binding:"required"`
+}
+
+// ConnectAsterWalletResponse response for Aster wallet connection
+type ConnectAsterWalletResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    struct {
+		WalletAddress string `json:"wallet_address"`
+		AgentCode     string `json:"agent_code"`
+		APICreated    bool   `json:"api_created"`
+	} `json:"data"`
+}
+
+// handleConnectAsterWallet handles Aster wallet connection
+// This endpoint receives a wallet address and initiates the API Wallet auto-generation flow
+func (s *Server) handleConnectAsterWallet(c *gin.Context) {
+	var req ConnectAsterWalletRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ConnectAsterWalletResponse{
+			Success: false,
+			Message: "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	// Validate wallet address format (basic check)
+	walletAddr := strings.TrimSpace(req.WalletAddress)
+	if !strings.HasPrefix(walletAddr, "0x") || len(walletAddr) != 42 {
+		c.JSON(http.StatusBadRequest, ConnectAsterWalletResponse{
+			Success: false,
+			Message: "Invalid wallet address format",
+		})
+		return
+	}
+
+	// Get Agent Code from environment variable
+	agentCode := os.Getenv("NOFX_ASTER_AGENT_CODE")
+	if agentCode == "" {
+		agentCode = "3E58dc" // Default agent code
+	}
+
+	// In the simplified public repo version, we just acknowledge the connection
+	// The actual API Wallet creation happens when the user configures the exchange
+	// This endpoint primarily serves to:
+	// 1. Validate the wallet address
+	// 2. Return the configured Agent Code for frontend display
+	// 3. Indicate that the wallet connection flow is ready
+	//
+	// Full implementation (with database) is available in the private repo
+
+	logger.Infof("Aster wallet connection request: %s", walletAddr)
+	logger.Infof("Agent Code configured: %s", agentCode)
+
+	resp := ConnectAsterWalletResponse{
+		Success: true,
+		Message: "Wallet connected successfully. Please configure the exchange to complete setup.",
+	}
+	resp.Data.WalletAddress = walletAddr
+	resp.Data.AgentCode = agentCode
+	resp.Data.APICreated = false // Will be true when full flow is implemented
+
+	c.JSON(http.StatusOK, resp)
 }

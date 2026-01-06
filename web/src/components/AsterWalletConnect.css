@@ -1,0 +1,366 @@
+/**
+ * Aster Wallet Connect Component Styles
+ */
+
+.aster-wallet-connect {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   Alert Styles
+   ============================================================================ */
+
+.alert {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.alert h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.alert p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alert-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+}
+
+.alert-error {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.alert-error strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.error-hint {
+  margin-top: 8px;
+  font-size: 13px;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+/* ============================================================================
+   Button Styles
+   ============================================================================ */
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-connect {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+}
+
+.btn-copy {
+  padding: 4px 8px;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-copy:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+/* ============================================================================
+   Loading State
+   ============================================================================ */
+
+.btn.loading {
+  position: relative;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   Connect Prompt
+   ============================================================================ */
+
+.connect-prompt {
+  text-align: center;
+}
+
+.connect-prompt h3 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.connect-prompt .description {
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  color: #718096;
+  line-height: 1.6;
+}
+
+.existing-wallet-notice {
+  padding: 12px;
+  background: #e6f3ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #0056b3;
+}
+
+.existing-wallet-notice .wallet-address {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-weight: 600;
+}
+
+/* ============================================================================
+   Connection Steps
+   ============================================================================ */
+
+.connection-steps {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.steps-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.connection-steps ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.connection-steps li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.connection-steps li:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================================
+   Connected State
+   ============================================================================ */
+
+.aster-wallet-connect.connected {
+  background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+}
+
+.connection-success {
+  text-align: center;
+}
+
+.success-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.success-icon {
+  font-size: 32px;
+}
+
+.success-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* ============================================================================
+   Connection Details
+   ============================================================================ */
+
+.connection-details {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.detail-item:first-child {
+  padding-top: 0;
+}
+
+.detail-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.detail-value.wallet-address,
+.detail-value.agent-code {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-weight: 600;
+  color: #667eea;
+}
+
+/* ============================================================================
+   Responsive Design
+   ============================================================================ */
+
+@media (max-width: 576px) {
+  .aster-wallet-connect {
+    padding: 16px;
+  }
+
+  .connect-prompt h3,
+  .success-header h3 {
+    font-size: 20px;
+  }
+
+  .btn-connect {
+    font-size: 16px;
+    padding: 14px;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .btn-copy {
+    align-self: flex-end;
+  }
+}
+
+/* ============================================================================
+   Dark Mode Support (Optional)
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  .aster-wallet-connect {
+    background: #1a202c;
+    color: #e2e8f0;
+  }
+
+  .connect-prompt h3,
+  .success-header h3 {
+    color: #f7fafc;
+  }
+
+  .connect-prompt .description {
+    color: #a0aec0;
+  }
+
+  .connection-details {
+    background: #2d3748;
+  }
+
+  .detail-label {
+    color: #cbd5e0;
+  }
+
+  .detail-value {
+    color: #a0aec0;
+  }
+
+  .connection-steps {
+    background: #2d3748;
+  }
+
+  .steps-title {
+    color: #cbd5e0;
+  }
+
+  .connection-steps li {
+    color: #a0aec0;
+  }
+}

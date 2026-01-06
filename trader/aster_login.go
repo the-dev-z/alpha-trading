@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	
 	"nofx/logger"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -72,26 +71,14 @@ func asterLoginWithAgentCode(user, privateKeyHex, agentCode string, client *http
 
 	// Step 1: 獲取 Nonce
 	logger.Infof("📝 [Aster 登錄] Step 1/3: 獲取 Nonce...")
-	nonceResp, err := http.Post(
-		baseURL+"/bapi/futures/v1/public/future/web3/get-nonce",
-		"application/json",
-		strings.NewReader(fmt.Sprintf(`{"sourceAddr": "%s", "type": "CREATE_API_KEY"}`, user)),
-	)
+	nonce, err := AsterGetNonce(user, "WEB3_LOGIN", client)
 	if err != nil {
-		return "", fmt.Errorf("獲取 nonce 失敗: %w", err)
+		logger.Warnf("⚠️ WEB3_LOGIN nonce 失敗，嘗試 CREATE_API_KEY: %v", err)
+		nonce, err = AsterGetNonce(user, "CREATE_API_KEY", client)
+		if err != nil {
+			return "", fmt.Errorf("獲取 nonce 失敗: %w", err)
+		}
 	}
-	defer nonceResp.Body.Close()
-
-	var nonceData AsterGetNonceResponse
-	if err := json.NewDecoder(nonceResp.Body).Decode(&nonceData); err != nil {
-		return "", fmt.Errorf("解析 nonce 響應失敗: %w", err)
-	}
-
-	if !nonceData.Success {
-		return "", fmt.Errorf("獲取 nonce 失敗: %s", nonceData.Message)
-	}
-
-	nonce := nonceData.Data.Nonce
 	logger.Infof("✓ Nonce 獲取成功: %s", nonce)
 
 	// Step 2: 簽名消息
@@ -137,10 +124,11 @@ func asterLoginWithAgentCode(user, privateKeyHex, agentCode string, client *http
 	}
 
 	loginBody, _ := json.Marshal(loginReq)
-	loginResp, err := http.Post(
+	loginResp, err := asterPostJSON(
+		client,
 		baseURL+"/bapi/futures/v1/public/future/web3/ae/login",
-		"application/json",
-		strings.NewReader(string(loginBody)),
+		loginBody,
+		"",
 	)
 	if err != nil {
 		return "", fmt.Errorf("登錄失敗: %w", err)
@@ -185,9 +173,35 @@ type AsterCreateApiKeyResponse struct {
 	Message string `json:"message"`
 	Data    struct {
 		APIKey    string `json:"apiKey"`
+		APISecret string `json:"apiSecret"`
 		SecretKey string `json:"secretKey"`
 	} `json:"data"`
 	Success bool `json:"success"`
+}
+
+const asterClientTypeHeader = "broker"
+
+func asterPostJSON(client *http.Client, url string, body []byte, token string) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(body)))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("clientType", asterClientTypeHeader)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	return client.Do(req)
+}
+
+func pickAsterAPISecret(resp *AsterCreateApiKeyResponse) string {
+	if resp == nil {
+		return ""
+	}
+	if resp.Data.APISecret != "" {
+		return resp.Data.APISecret
+	}
+	return resp.Data.SecretKey
 }
 
 // asterCreateBrokerApiKey 創建 Broker 模式的 API Key
@@ -197,31 +211,17 @@ func asterCreateBrokerApiKey(token, user, privateKeyHex string, client *http.Cli
 	baseURL := "https://www.asterdex.com"
 
 	// 獲取新的 nonce
-	nonceResp, err := http.Post(
-		baseURL+"/bapi/futures/v1/public/future/web3/get-nonce",
-		"application/json",
-		strings.NewReader(fmt.Sprintf(`{"sourceAddr": "%s", "type": "CREATE_API_KEY"}`, user)),
-	)
+	nonce, err := AsterGetNonce(user, "CREATE_API_KEY", client)
 	if err != nil {
 		return "", "", fmt.Errorf("獲取 nonce 失敗: %w", err)
 	}
-	defer nonceResp.Body.Close()
-
-	var nonceData AsterGetNonceResponse
-	if err := json.NewDecoder(nonceResp.Body).Decode(&nonceData); err != nil {
-		return "", "", fmt.Errorf("解析 nonce 響應失敗: %w", err)
-	}
-
-	nonce := nonceData.Data.Nonce
 
 	// 簽名
 	message := fmt.Sprintf("You are signing into Astherus %s", nonce)
-	privateKey, _ := crypto.HexToECDSA(strings.TrimPrefix(privateKeyHex, "0x"))
-	prefixedMsg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
-	msgHash := crypto.Keccak256Hash([]byte(prefixedMsg))
-	signature, _ := crypto.Sign(msgHash.Bytes(), privateKey)
-	signature[64] += 27
-	signatureHex := "0x" + fmt.Sprintf("%x", signature)
+	signatureHex, err := SignMessageWithPrivateKey(privateKeyHex, message)
+	if err != nil {
+		return "", "", fmt.Errorf("簽名失敗: %w", err)
+	}
 
 	// 創建 API Key（Broker 模式）
 	createReq := AsterCreateApiKeyRequest{
@@ -235,13 +235,12 @@ func asterCreateBrokerApiKey(token, user, privateKeyHex string, client *http.Cli
 	}
 
 	createBody, _ := json.Marshal(createReq)
-	req, _ := http.NewRequest("POST",
+	createResp, err := asterPostJSON(
+		client,
 		baseURL+"/bapi/futures/v1/public/future/web3/broker-create-api-key",
-		strings.NewReader(string(createBody)))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	createResp, err := client.Do(req)
+		createBody,
+		token,
+	)
 	if err != nil {
 		return "", "", fmt.Errorf("創建 API Key 失敗: %w", err)
 	}
@@ -256,8 +255,13 @@ func asterCreateBrokerApiKey(token, user, privateKeyHex string, client *http.Cli
 		return "", "", fmt.Errorf("創建 API Key 失敗: %s", createData.Message)
 	}
 
+	secretKey = pickAsterAPISecret(&createData)
+	if secretKey == "" {
+		return "", "", fmt.Errorf("創建 API Key 失敗: empty api secret")
+	}
+
 	logger.Infof("✓ API Key 創建成功（Broker 模式）")
-	return createData.Data.APIKey, createData.Data.SecretKey, nil
+	return createData.Data.APIKey, secretKey, nil
 }
 
 // setAsterAgentCodeInDB stores Agent Code to database
@@ -319,10 +323,11 @@ func AsterLoginWithSignature(user, signature, nonce, agentCode string, client *h
 	}
 
 	loginBody, _ := json.Marshal(loginReq)
-	loginResp, err := http.Post(
+	loginResp, err := asterPostJSON(
+		client,
 		baseURL+"/bapi/futures/v1/public/future/web3/ae/login",
-		"application/json",
-		strings.NewReader(string(loginBody)),
+		loginBody,
+		"",
 	)
 	if err != nil {
 		return "", fmt.Errorf("登錄失敗: %w", err)
@@ -381,13 +386,12 @@ func AsterCreateBrokerApiKeyWithSignature(token, user, signature, nonce string, 
 	}
 
 	createBody, _ := json.Marshal(createReq)
-	req, _ := http.NewRequest("POST",
+	createResp, err := asterPostJSON(
+		client,
 		baseURL+"/bapi/futures/v1/public/future/web3/broker-create-api-key",
-		strings.NewReader(string(createBody)))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	createResp, err := client.Do(req)
+		createBody,
+		token,
+	)
 	if err != nil {
 		return "", "", fmt.Errorf("創建 API Key 失敗: %w", err)
 	}
@@ -403,10 +407,15 @@ func AsterCreateBrokerApiKeyWithSignature(token, user, signature, nonce string, 
 		return "", "", fmt.Errorf("創建 API Key 失敗: code=%s, message=%s", createData.Code, createData.Message)
 	}
 
+	secretKey = pickAsterAPISecret(&createData)
+	if secretKey == "" {
+		return "", "", fmt.Errorf("創建 API Key 失敗: empty api secret")
+	}
+
 	logger.Infof("✓ API Key 創建成功（Broker 模式，使用簽名）")
 	logger.Infof("  └─ API Key: %s", createData.Data.APIKey)
 
-	return createData.Data.APIKey, createData.Data.SecretKey, nil
+	return createData.Data.APIKey, secretKey, nil
 }
 
 // ========== 自動生成 API Wallet 模式（類似 Hyperliquid Agent Wallet） ==========
@@ -547,10 +556,11 @@ func AsterAutoLogin(apiWalletAddr, apiWalletPrivKey, agentCode string, client *h
 	}
 
 	loginBody, _ := json.Marshal(loginReq)
-	loginResp, err := client.Post(
+	loginResp, err := asterPostJSON(
+		client,
 		baseURL+"/bapi/futures/v1/public/future/web3/ae/login",
-		"application/json",
-		strings.NewReader(string(loginBody)),
+		loginBody,
+		"",
 	)
 	if err != nil {
 		return "", fmt.Errorf("登錄失敗: %w", err)
@@ -620,13 +630,12 @@ func AsterAutoCreateBrokerApiKey(token, apiWalletAddr, apiWalletPrivKey string, 
 	}
 
 	createBody, _ := json.Marshal(createReq)
-	req, _ := http.NewRequest("POST",
+	createResp, err := asterPostJSON(
+		client,
 		baseURL+"/bapi/futures/v1/public/future/web3/broker-create-api-key",
-		strings.NewReader(string(createBody)))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	createResp, err := client.Do(req)
+		createBody,
+		token,
+	)
 	if err != nil {
 		return "", "", fmt.Errorf("創建 API Key 失敗: %w", err)
 	}
@@ -642,8 +651,13 @@ func AsterAutoCreateBrokerApiKey(token, apiWalletAddr, apiWalletPrivKey string, 
 		return "", "", fmt.Errorf("創建 API Key 失敗: code=%s, message=%s", createData.Code, createData.Message)
 	}
 
+	secretKey = pickAsterAPISecret(&createData)
+	if secretKey == "" {
+		return "", "", fmt.Errorf("創建 API Key 失敗: empty api secret")
+	}
+
 	logger.Infof("✓ API Key 自動創建成功（Broker 模式）")
 	logger.Infof("  └─ API Key: %s", createData.Data.APIKey)
 
-	return createData.Data.APIKey, createData.Data.SecretKey, nil
+	return createData.Data.APIKey, secretKey, nil
 }
