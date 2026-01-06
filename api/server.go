@@ -598,19 +598,29 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		tempTrader = trader.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID)
 	case "hyperliquid":
 		privateKey, builderAddress, builderFeeRate := s.resolveHyperliquidCredentials(userID, exchangeCfg)
-		tempTrader, createErr = trader.NewHyperliquidTrader(
-			privateKey,
-			exchangeCfg.HyperliquidWalletAddr,
-			exchangeCfg.Testnet,
-			builderAddress,
-			builderFeeRate,
-		)
+		if exchangeCfg.HyperliquidWalletAddr == "" {
+			createErr = fmt.Errorf("Hyperliquid requires wallet address")
+		} else if privateKey == "" {
+			createErr = fmt.Errorf("Hyperliquid requires private key (via API key or Agent Wallet)")
+		} else {
+			tempTrader, createErr = trader.NewHyperliquidTrader(
+				privateKey,
+				exchangeCfg.HyperliquidWalletAddr,
+				exchangeCfg.Testnet,
+				builderAddress,
+				builderFeeRate,
+			)
+		}
 	case "aster":
+		if exchangeCfg.AsterUser == "" || exchangeCfg.AsterSigner == "" || string(exchangeCfg.AsterPrivateKey) == "" {
+			createErr = fmt.Errorf("Aster requires user, signer, and private key")
+		} else {
 			tempTrader, createErr = trader.NewAsterTrader(
 				exchangeCfg.AsterUser,
 				exchangeCfg.AsterSigner,
 				string(exchangeCfg.AsterPrivateKey),
 			)
+		}
 		case "bybit":
 			tempTrader = trader.NewBybitTrader(
 				string(exchangeCfg.APIKey),
@@ -1145,19 +1155,29 @@ func (s *Server) handleSyncBalance(c *gin.Context) {
 		tempTrader = trader.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID)
 	case "hyperliquid":
 		privateKey, builderAddress, builderFeeRate := s.resolveHyperliquidCredentials(userID, exchangeCfg)
-		tempTrader, createErr = trader.NewHyperliquidTrader(
-			privateKey,
-			exchangeCfg.HyperliquidWalletAddr,
-			exchangeCfg.Testnet,
-			builderAddress,
-			builderFeeRate,
-		)
+		if exchangeCfg.HyperliquidWalletAddr == "" {
+			createErr = fmt.Errorf("Hyperliquid requires wallet address")
+		} else if privateKey == "" {
+			createErr = fmt.Errorf("Hyperliquid requires private key (via API key or Agent Wallet)")
+		} else {
+			tempTrader, createErr = trader.NewHyperliquidTrader(
+				privateKey,
+				exchangeCfg.HyperliquidWalletAddr,
+				exchangeCfg.Testnet,
+				builderAddress,
+				builderFeeRate,
+			)
+		}
 	case "aster":
-		tempTrader, createErr = trader.NewAsterTrader(
-			exchangeCfg.AsterUser,
-			exchangeCfg.AsterSigner,
-			string(exchangeCfg.AsterPrivateKey),
-		)
+		if exchangeCfg.AsterUser == "" || exchangeCfg.AsterSigner == "" || string(exchangeCfg.AsterPrivateKey) == "" {
+			createErr = fmt.Errorf("Aster requires user, signer, and private key")
+		} else {
+			tempTrader, createErr = trader.NewAsterTrader(
+				exchangeCfg.AsterUser,
+				exchangeCfg.AsterSigner,
+				string(exchangeCfg.AsterPrivateKey),
+			)
+		}
 	case "bybit":
 		tempTrader = trader.NewBybitTrader(
 			string(exchangeCfg.APIKey),
@@ -1300,19 +1320,29 @@ func (s *Server) handleClosePosition(c *gin.Context) {
 		tempTrader = trader.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID)
 	case "hyperliquid":
 		privateKey, builderAddress, builderFeeRate := s.resolveHyperliquidCredentials(userID, exchangeCfg)
-		tempTrader, createErr = trader.NewHyperliquidTrader(
-			privateKey,
-			exchangeCfg.HyperliquidWalletAddr,
-			exchangeCfg.Testnet,
-			builderAddress,
-			builderFeeRate,
-		)
+		if exchangeCfg.HyperliquidWalletAddr == "" {
+			createErr = fmt.Errorf("Hyperliquid requires wallet address")
+		} else if privateKey == "" {
+			createErr = fmt.Errorf("Hyperliquid requires private key (via API key or Agent Wallet)")
+		} else {
+			tempTrader, createErr = trader.NewHyperliquidTrader(
+				privateKey,
+				exchangeCfg.HyperliquidWalletAddr,
+				exchangeCfg.Testnet,
+				builderAddress,
+				builderFeeRate,
+			)
+		}
 	case "aster":
-		tempTrader, createErr = trader.NewAsterTrader(
-			exchangeCfg.AsterUser,
-			exchangeCfg.AsterSigner,
-			string(exchangeCfg.AsterPrivateKey),
-		)
+		if exchangeCfg.AsterUser == "" || exchangeCfg.AsterSigner == "" || string(exchangeCfg.AsterPrivateKey) == "" {
+			createErr = fmt.Errorf("Aster requires user, signer, and private key")
+		} else {
+			tempTrader, createErr = trader.NewAsterTrader(
+				exchangeCfg.AsterUser,
+				exchangeCfg.AsterSigner,
+				string(exchangeCfg.AsterPrivateKey),
+			)
+		}
 	case "bybit":
 		tempTrader = trader.NewBybitTrader(
 			string(exchangeCfg.APIKey),
@@ -3733,9 +3763,7 @@ func (s *Server) handleConnectAsterWallet(c *gin.Context) {
 
 	// Get Agent Code using the trader package (supports DB > ENV > default)
 	agentCode := trader.GetAsterAgentCodePublic(s.store)
-	if agentCode == "" {
-		agentCode = "3E58dc" // Default agent code
-	}
+	// Note: agentCode may be empty if not configured - Referral will be disabled
 
 	// Get user ID from JWT context (if authenticated)
 	userID := ""
@@ -3819,7 +3847,12 @@ func (s *Server) handleConnectAsterWallet(c *gin.Context) {
 		}
 
 		if err := s.traderManager.LoadUserTradersFromStore(s.store, userID); err != nil {
-			logger.Infof("⚠️ Failed to reload user traders into memory: %v", err)
+			logger.Warnf("⚠️ Failed to reload user traders into memory: %v", err)
+			c.JSON(http.StatusInternalServerError, ConnectAsterWalletResponse{
+				Success: false,
+				Message: "Credentials saved but failed to load trader: " + err.Error(),
+			})
+			return
 		}
 
 		resp := ConnectAsterWalletResponse{
