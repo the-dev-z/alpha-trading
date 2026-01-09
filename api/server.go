@@ -216,6 +216,7 @@ func (s *Server) setupRoutes() {
 			protected.GET("/trades", s.handleTrades)
 			protected.GET("/orders", s.handleOrders)               // Order list (all orders)
 			protected.GET("/orders/:id/fills", s.handleOrderFills) // Order fill details
+			protected.GET("/open-orders", s.handleOpenOrders)      // Open orders from exchange (pending SL/TP)
 			protected.GET("/decisions", s.handleDecisions)
 			protected.GET("/decisions/latest", s.handleLatestDecisions)
 			protected.GET("/statistics", s.handleStatistics)
@@ -1505,9 +1506,9 @@ func (s *Server) recordClosePositionOrder(traderID, exchangeID, exchangeType, sy
 		FilledQuantity:  quantity,
 		AvgFillPrice:    exitPrice,
 		Commission:      fee,
-		FilledAt:        time.Now().UTC(),
-		CreatedAt:       time.Now().UTC(),
-		UpdatedAt:       time.Now().UTC(),
+		FilledAt:        time.Now().UTC().UnixMilli(),
+		CreatedAt:       time.Now().UTC().UnixMilli(),
+		UpdatedAt:       time.Now().UTC().UnixMilli(),
 	}
 
 	if err := s.store.Order().CreateOrder(orderRecord); err != nil {
@@ -1535,7 +1536,7 @@ func (s *Server) recordClosePositionOrder(traderID, exchangeID, exchangeType, sy
 		CommissionAsset: "USDT",
 		RealizedPnL:     0,
 		IsMaker:         false,
-		CreatedAt:       time.Now().UTC(),
+		CreatedAt:       time.Now().UTC().UnixMilli(),
 	}
 
 	if err := s.store.Order().CreateFill(fillRecord); err != nil {
@@ -1610,7 +1611,7 @@ func (s *Server) pollAndUpdateOrderStatus(orderRecordID int64, traderID, exchang
 					CommissionAsset: "USDT",
 					RealizedPnL:     0,
 					IsMaker:         false,
-					CreatedAt:       time.Now().UTC(),
+					CreatedAt:       time.Now().UTC().UnixMilli(),
 				}
 
 				if err := s.store.Order().CreateFill(fillRecord); err != nil {
@@ -2347,28 +2348,14 @@ func (s *Server) handleOrders(c *gin.Context) {
 		return
 	}
 
-	// Get all orders for this trader
-	allOrders, err := store.Order().GetTraderOrders(trader.GetID(), limit)
+	// Get orders with filters applied at database level
+	orders, err := store.Order().GetTraderOrdersFiltered(trader.GetID(), symbol, statusFilter, limit)
 	if err != nil {
 		SafeInternalError(c, "Get orders", err)
 		return
 	}
 
-	// Filter by symbol and status if specified
-	result := make([]interface{}, 0)
-	for _, order := range allOrders {
-		// Filter by symbol
-		if symbol != "" && order.Symbol != symbol {
-			continue
-		}
-		// Filter by status
-		if statusFilter != "" && order.Status != statusFilter {
-			continue
-		}
-		result = append(result, order)
-	}
-
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, orders)
 }
 
 // handleOrderFills Order fill details (all fills for a specific order)
@@ -2406,6 +2393,40 @@ func (s *Server) handleOrderFills(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, fills)
+}
+
+// handleOpenOrders Get open orders (pending SL/TP) from exchange
+func (s *Server) handleOpenOrders(c *gin.Context) {
+	_, traderID, err := s.getTraderFromQuery(c)
+	if err != nil {
+		SafeBadRequest(c, "Invalid trader ID")
+		return
+	}
+
+	trader, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+
+	// Get symbol parameter (required for exchange query)
+	symbol := c.Query("symbol")
+	if symbol == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "symbol parameter is required"})
+		return
+	}
+
+	// Normalize symbol
+	symbol = market.Normalize(symbol)
+
+	// Get open orders from exchange
+	openOrders, err := trader.GetOpenOrders(symbol)
+	if err != nil {
+		SafeInternalError(c, "Get open orders", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, openOrders)
 }
 
 // handleKlines K-line data (supports multiple exchanges via coinank)
@@ -3021,7 +3042,44 @@ func (s *Server) handleRegister(c *gin.Context) {
 		return
 	}
 
-	// Check max users limit
+	var req struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SafeBadRequest(c, "Invalid request parameters")
+		return
+	}
+
+	// Check if email already exists (must check before maxUsers to allow incomplete OTP users)
+	existingUser, err := s.store.User().GetByEmail(req.Email)
+	if err == nil {
+		// User exists, check OTP verification status
+		if !existingUser.OTPVerified {
+			// OTP not verified, verify password first for security
+			if !auth.CheckPassword(req.Password, existingUser.PasswordHash) {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Email or password incorrect"})
+				return
+			}
+			// Password correct, allow user to continue OTP setup
+			// Return existing OTP information
+			qrCodeURL := auth.GetOTPQRCodeURL(existingUser.OTPSecret, req.Email)
+			c.JSON(http.StatusOK, gin.H{
+				"user_id":     existingUser.ID,
+				"email":       existingUser.Email,
+				"otp_secret":  existingUser.OTPSecret,
+				"qr_code_url": qrCodeURL,
+				"message":     "Incomplete registration detected, please continue OTP setup",
+			})
+			return
+		}
+		// OTP already verified, reject duplicate registration
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		return
+	}
+
+	// Check max users limit (only for new users)
 	maxUsers := config.Get().MaxUsers
 	if maxUsers > 0 {
 		userCount, err := s.store.User().Count()
@@ -3033,23 +3091,6 @@ func (s *Server) handleRegister(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Not on whitelist"})
 			return
 		}
-	}
-
-	var req struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=6"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		SafeBadRequest(c, "Invalid request parameters")
-		return
-	}
-
-	// Check if email already exists
-	_, err := s.store.User().GetByEmail(req.Email)
-	if err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
-		return
 	}
 
 	// Generate password hash
@@ -3173,10 +3214,15 @@ func (s *Server) handleLogin(c *gin.Context) {
 
 	// Check if OTP is verified
 	if !user.OTPVerified {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error":              "Account has not completed OTP setup",
+		// Return OTP info so user can complete setup
+		qrCodeURL := auth.GetOTPQRCodeURL(user.OTPSecret, user.Email)
+		c.JSON(http.StatusOK, gin.H{
 			"user_id":            user.ID,
+			"email":              user.Email,
+			"otp_secret":         user.OTPSecret,
+			"qr_code_url":        qrCodeURL,
 			"requires_otp_setup": true,
+			"message":            "Please complete OTP setup first",
 		})
 		return
 	}

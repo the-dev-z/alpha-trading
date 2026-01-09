@@ -1415,15 +1415,12 @@ func (t *HyperliquidTrader) placeXyzOrder(coin string, isBuy bool, size float64,
 		},
 	}
 
-	// Create OrderAction with builder (xyz dex requires builder info for order routing)
+	// Create OrderAction (no builder to avoid requiring builder fee approval)
 	action := hyperliquid.OrderAction{
 		Type:     "order",
 		Orders:   []hyperliquid.OrderWire{orderWire},
 		Grouping: "na",
-		Builder: &hyperliquid.BuilderInfo{
-			Builder: "0x891dc6f05ad47a3c1a05da55e7a7517971faaf0d",
-			Fee:     10,
-		},
+		Builder:  nil,
 	}
 
 	// Sign the action
@@ -1605,15 +1602,12 @@ func (t *HyperliquidTrader) placeXyzTriggerOrder(coin string, isBuy bool, size f
 		},
 	}
 
-	// Create OrderAction with builder
+	// Create OrderAction (no builder to avoid requiring builder fee approval)
 	action := hyperliquid.OrderAction{
 		Type:     "order",
 		Orders:   []hyperliquid.OrderWire{orderWire},
 		Grouping: "na",
-		Builder: &hyperliquid.BuilderInfo{
-			Builder: "0x891dc6f05ad47a3c1a05da55e7a7517971faaf0d",
-			Fee:     10,
-		},
+		Builder:  nil,
 	}
 
 	// Sign the action
@@ -2093,3 +2087,37 @@ func (t *HyperliquidTrader) GetTrades(startTime time.Time, limit int) ([]TradeRe
 
 // Note: Builder info is now configured per-trader via NewHyperliquidTrader parameters
 // See NOFX_HYPERLIQUID_BUILDER_ADDRESS and NOFX_HYPERLIQUID_BUILDER_FEE_RATE in .env
+
+// GetOpenOrders gets all open/pending orders for a symbol
+func (t *HyperliquidTrader) GetOpenOrders(symbol string) ([]OpenOrder, error) {
+	openOrders, err := t.exchange.Info().OpenOrders(t.ctx, t.walletAddr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get open orders: %w", err)
+	}
+
+	var result []OpenOrder
+	for _, order := range openOrders {
+		if order.Coin != symbol {
+			continue
+		}
+
+		side := "BUY"
+		if order.Side == "A" {
+			side = "SELL"
+		}
+
+		result = append(result, OpenOrder{
+			OrderID:      fmt.Sprintf("%d", order.Oid),
+			Symbol:       order.Coin,
+			Side:         side,
+			PositionSide: "",
+			Type:         "LIMIT",
+			Price:        order.LimitPx,
+			StopPrice:    0,
+			Quantity:     order.Size,
+			Status:       "NEW",
+		})
+	}
+
+	return result, nil
+}
