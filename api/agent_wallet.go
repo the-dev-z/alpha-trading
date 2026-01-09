@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -151,6 +153,72 @@ type approveBuilderFeeAction struct {
 	Nonce            int64  `json:"nonce" msgpack:"nonce"`
 }
 
+type rateLimitEntry struct {
+	count       int
+	windowStart time.Time
+}
+
+type simpleRateLimiter struct {
+	mu      sync.Mutex
+	entries map[string]*rateLimitEntry
+}
+
+func newSimpleRateLimiter() *simpleRateLimiter {
+	return &simpleRateLimiter{
+		entries: make(map[string]*rateLimitEntry),
+	}
+}
+
+func (r *simpleRateLimiter) allow(key string, limit int, window time.Duration) (bool, time.Duration) {
+	if key == "" || limit <= 0 || window <= 0 {
+		return true, 0
+	}
+
+	now := time.Now()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	entry, ok := r.entries[key]
+	if !ok || now.Sub(entry.windowStart) >= window {
+		r.entries[key] = &rateLimitEntry{
+			count:       1,
+			windowStart: now,
+		}
+		return true, 0
+	}
+
+	if entry.count >= limit {
+		remaining := window - now.Sub(entry.windowStart)
+		if remaining < 0 {
+			remaining = 0
+		}
+		return false, remaining
+	}
+
+	entry.count++
+	return true, 0
+}
+
+var agentWalletCreateLimiter = newSimpleRateLimiter()
+
+func agentWalletCreateRateLimitConfig() (int, time.Duration) {
+	limit := getEnvInt("NOFX_AGENT_WALLET_CREATE_LIMIT", 3)
+	windowSeconds := getEnvInt("NOFX_AGENT_WALLET_CREATE_WINDOW_SECONDS", 600)
+	if limit <= 0 || windowSeconds <= 0 {
+		return 0, 0
+	}
+	return limit, time.Duration(windowSeconds) * time.Second
+}
+
+func agentWalletCreateRateLimitKey(userID string) string {
+	trimmed := strings.TrimSpace(userID)
+	if trimmed == "" {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(trimmed))
+	return hex.EncodeToString(sum[:])
+}
+
 func (s *Server) handleCreateAgentWallet(c *gin.Context) {
 	userID := c.GetString("user_id")
 	if userID == "" {
@@ -186,6 +254,21 @@ func (s *Server) handleCreateAgentWallet(c *gin.Context) {
 			Message: err.Error(),
 		})
 		return
+	}
+
+	if limit, window := agentWalletCreateRateLimitConfig(); limit > 0 && window > 0 {
+		rateKey := agentWalletCreateRateLimitKey(userID)
+		allowed, retryAfter := agentWalletCreateLimiter.allow(rateKey, limit, window)
+		if !allowed {
+			if retryAfter > 0 {
+				c.Header("Retry-After", strconv.Itoa(int(retryAfter.Seconds())))
+			}
+			c.JSON(http.StatusTooManyRequests, CreateAgentWalletResponse{
+				Success: false,
+				Message: "Too many requests. Please wait before creating another agent wallet.",
+			})
+			return
+		}
 	}
 
 	if s.store == nil {

@@ -3848,10 +3848,14 @@ func (s *Server) handleConnectAsterWallet(c *gin.Context) {
 
 		if err := s.traderManager.LoadUserTradersFromStore(s.store, userID); err != nil {
 			logger.Warnf("⚠️ Failed to reload user traders into memory: %v", err)
-			c.JSON(http.StatusInternalServerError, ConnectAsterWalletResponse{
-				Success: false,
-				Message: "Credentials saved but failed to load trader: " + err.Error(),
-			})
+			resp := ConnectAsterWalletResponse{
+				Success: true,
+				Message: "Wallet connected and API credentials saved. Please refresh to load the trader.",
+			}
+			resp.Data.WalletAddress = walletAddr
+			resp.Data.AgentCode = agentCode
+			resp.Data.APICreated = true
+			c.JSON(http.StatusOK, resp)
 			return
 		}
 

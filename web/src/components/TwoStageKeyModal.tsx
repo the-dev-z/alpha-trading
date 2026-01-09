@@ -149,7 +149,11 @@ export function TwoStageKeyModal({
     const normalized1 = part1.startsWith('0x') ? part1.slice(2) : part1
     const fullKey = normalized1 + normalized2
     if (!validatePrivateKeyFormat(fullKey, expectedLength)) {
-      setError(t('errors.privatekeyInvalidFormat', language))
+      setError(
+        t('errors.privatekeyInvalidFormat', language, {
+          expected: expectedLength,
+        })
+      )
       return
     }
 

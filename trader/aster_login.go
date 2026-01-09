@@ -1,12 +1,16 @@
 package trader
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"nofx/logger"
 	"nofx/store"
@@ -188,16 +192,66 @@ type AsterCreateApiKeyResponse struct {
 const asterClientTypeHeader = "broker"
 
 func asterPostJSON(client *http.Client, url string, body []byte, token string) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(body)))
-	if err != nil {
+	maxRetries := getEnvInt("NOFX_ASTER_RETRY_MAX", 2)
+	baseDelayMs := getEnvInt("NOFX_ASTER_RETRY_BASE_MS", 500)
+	if maxRetries < 0 {
+		maxRetries = 0
+	}
+	if baseDelayMs <= 0 {
+		baseDelayMs = 500
+	}
+	baseDelay := time.Duration(baseDelayMs) * time.Millisecond
+
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("clientType", asterClientTypeHeader)
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+
+		resp, err := client.Do(req)
+		if err == nil {
+			if shouldRetryAsterStatus(resp.StatusCode) && attempt < maxRetries {
+				resp.Body.Close()
+				time.Sleep(baseDelay * time.Duration(attempt+1))
+				continue
+			}
+			return resp, nil
+		}
+
+		lastErr = err
+		if attempt < maxRetries && isRetryableAsterError(err) {
+			time.Sleep(baseDelay * time.Duration(attempt+1))
+			continue
+		}
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("clientType", asterClientTypeHeader)
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+	if lastErr != nil {
+		return nil, lastErr
 	}
-	return client.Do(req)
+	return nil, fmt.Errorf("Aster request failed")
+}
+
+func shouldRetryAsterStatus(status int) bool {
+	return status == http.StatusTooManyRequests || status >= http.StatusInternalServerError
+}
+
+func isRetryableAsterError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return netErr.Timeout() || netErr.Temporary()
+	}
+	return errors.Is(err, io.EOF) ||
+		strings.Contains(err.Error(), "connection reset") ||
+		strings.Contains(err.Error(), "EOF")
 }
 
 func pickAsterAPISecret(resp *AsterCreateApiKeyResponse) string {
@@ -502,16 +556,22 @@ func SignMessageWithPrivateKey(privateKeyHex, message string) (signature string,
 func AsterGetNonce(sourceAddr, nonceType string, client *http.Client) (string, error) {
 	baseURL := "https://www.asterdex.com"
 
-	reqBody := fmt.Sprintf(`{"sourceAddr": "%s", "network": "56", "type": "%s"}`, sourceAddr, nonceType)
-	resp, err := client.Post(
+	reqBody := []byte(fmt.Sprintf(`{"sourceAddr": "%s", "network": "56", "type": "%s"}`, sourceAddr, nonceType))
+	resp, err := asterPostJSON(
+		client,
 		baseURL+"/bapi/futures/v1/public/future/web3/get-nonce",
-		"application/json",
-		strings.NewReader(reqBody),
+		reqBody,
+		"",
 	)
 	if err != nil {
 		return "", fmt.Errorf("獲取 nonce 失敗: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("獲取 nonce 失敗: HTTP %d: %s", resp.StatusCode, string(body))
+	}
 
 	var nonceData AsterGetNonceResponse
 	if err := json.NewDecoder(resp.Body).Decode(&nonceData); err != nil {

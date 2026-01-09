@@ -3,6 +3,7 @@ import type { Exchange } from '../../types'
 import { t, type Language } from '../../i18n/translations'
 import { api } from '../../lib/api'
 import { connectAsterWallet, isMetaMaskInstalled } from '../../lib/asterWallet'
+import { validatePrivateKeyFormat } from '../../lib/crypto'
 import {
   authorizeHyperliquidAgent,
   authorizeHyperliquidBuilderFee,
@@ -275,6 +276,13 @@ export function ExchangeConfigModal({
   }
 
   const isHyperliquidBusy = hyperliquidAgentAction !== ''
+  const hyperliquidPrivateKeyInvalid =
+    apiKey.trim() !== '' && !validatePrivateKeyFormat(apiKey.trim(), 64)
+  const asterPrivateKeyInvalid =
+    asterPrivateKey.trim() !== '' && !validatePrivateKeyFormat(asterPrivateKey.trim(), 64)
+  const lighterApiKeyPrivateKeyInvalid =
+    lighterApiKeyPrivateKey.trim() !== '' &&
+    !validatePrivateKeyFormat(lighterApiKeyPrivateKey.trim(), 80)
 
   const applyHyperliquidStatus = (status: HyperliquidAgentStatus | null) => {
     setHyperliquidAgentStatus(status)
@@ -282,6 +290,38 @@ export function ExchangeConfigModal({
       setHyperliquidBuilderFeeRate(String(status.builderFeeMaxRate))
     }
   }
+
+  useEffect(() => {
+    if (currentExchangeType !== 'hyperliquid') return
+    if (!hyperliquidWalletAddr.trim() || !hyperliquidConnectAvailable) return
+
+    let cancelled = false
+    const refreshStatus = async () => {
+      if (cancelled || isHyperliquidBusy) return
+      try {
+        const status = await getHyperliquidAgentStatus(hyperliquidWalletAddr)
+        if (!cancelled) {
+          applyHyperliquidStatus(status)
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn('Failed to refresh Hyperliquid agent status:', error)
+        }
+      }
+    }
+
+    refreshStatus()
+    const intervalId = window.setInterval(refreshStatus, 20000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [
+    currentExchangeType,
+    hyperliquidWalletAddr,
+    hyperliquidConnectAvailable,
+    isHyperliquidBusy,
+  ])
 
   const handleHyperliquidCreateAgentWallet = async () => {
     if (isHyperliquidBusy) return
@@ -409,6 +449,8 @@ export function ExchangeConfigModal({
       : secureInputTarget === 'hyperliquid'
         ? t('hyperliquidExchangeName', language)
         : undefined
+  const secureInputExpectedLength =
+    secureInputTarget === 'lighter' ? 80 : 64
 
   const handleSecureInputCancel = () => {
     setSecureInputTarget(null)
@@ -458,6 +500,19 @@ export function ExchangeConfigModal({
     const trimmedAccountName = accountName.trim()
     if (!trimmedAccountName) {
       toast.error(language === 'zh' ? '请输入账户名称' : 'Please enter account name')
+      return
+    }
+
+    if (currentExchangeType === 'hyperliquid' && hyperliquidPrivateKeyInvalid) {
+      toast.error(t('errors.privatekeyInvalidFormat', language, { expected: 64 }))
+      return
+    }
+    if (currentExchangeType === 'aster' && asterPrivateKeyInvalid) {
+      toast.error(t('errors.privatekeyInvalidFormat', language, { expected: 64 }))
+      return
+    }
+    if (currentExchangeType === 'lighter' && lighterApiKeyPrivateKeyInvalid) {
+      toast.error(t('errors.privatekeyInvalidFormat', language, { expected: 80 }))
       return
     }
 
@@ -1150,6 +1205,13 @@ export function ExchangeConfigModal({
                       >
                         {t('asterPrivateKeyDesc', language)}
                       </div>
+                      {asterPrivateKeyInvalid && (
+                        <div className="text-xs mt-1" style={{ color: '#F6465D' }}>
+                          {t('errors.privatekeyInvalidFormat', language, {
+                            expected: 64,
+                          })}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -1388,6 +1450,13 @@ export function ExchangeConfigModal({
                       >
                         {t('hyperliquidAgentPrivateKeyDesc', language)}
                       </div>
+                      {hyperliquidPrivateKeyInvalid && (
+                        <div className="text-xs mt-1" style={{ color: '#F6465D' }}>
+                          {t('errors.privatekeyInvalidFormat', language, {
+                            expected: 64,
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Main Wallet Address 字段 */}
@@ -1510,6 +1579,13 @@ export function ExchangeConfigModal({
                       <div className="text-xs mt-1" style={{ color: '#848E9C' }}>
                         {t('lighterApiKeyPrivateKeyDesc', language)}
                       </div>
+                      {lighterApiKeyPrivateKeyInvalid && (
+                        <div className="text-xs mt-1" style={{ color: '#F6465D' }}>
+                          {t('errors.privatekeyInvalidFormat', language, {
+                            expected: 80,
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* API Key Index */}
@@ -1585,13 +1661,18 @@ export function ExchangeConfigModal({
                     !secretKey.trim() ||
                     !passphrase.trim())) ||
                 (currentExchangeType === 'hyperliquid' &&
-                  (!apiKey.trim() || !hyperliquidWalletAddr.trim())) || // 验证私钥和钱包地址
+                  (!apiKey.trim() ||
+                    !hyperliquidWalletAddr.trim() ||
+                    hyperliquidPrivateKeyInvalid)) || // 验证私钥和钱包地址
                 (currentExchangeType === 'aster' &&
                   (!asterUser.trim() ||
                     !asterSigner.trim() ||
-                    !asterPrivateKey.trim())) ||
+                    !asterPrivateKey.trim() ||
+                    asterPrivateKeyInvalid)) ||
                 (currentExchangeType === 'lighter' &&
-                  (!lighterWalletAddr.trim() || !lighterApiKeyPrivateKey.trim())) ||
+                  (!lighterWalletAddr.trim() ||
+                    !lighterApiKeyPrivateKey.trim() ||
+                    lighterApiKeyPrivateKeyInvalid)) ||
                 (currentExchangeType === 'bybit' &&
                   (!apiKey.trim() || !secretKey.trim())) ||
                 (selectedTemplate?.type === 'cex' &&
@@ -1656,7 +1737,7 @@ export function ExchangeConfigModal({
         isOpen={secureInputTarget !== null}
         language={language}
         contextLabel={secureInputContextLabel}
-        expectedLength={64}
+        expectedLength={secureInputExpectedLength}
         onCancel={handleSecureInputCancel}
         onComplete={handleSecureInputComplete}
       />

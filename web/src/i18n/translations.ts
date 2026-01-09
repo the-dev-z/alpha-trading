@@ -1110,7 +1110,7 @@ export const translations = {
     errors: {
       privatekeyIncomplete: 'Please enter at least {expected} characters',
       privatekeyInvalidFormat:
-        'Invalid private key format (should be 64 hex characters)',
+        'Invalid private key format (should be {expected} hex characters)',
       privatekeyObfuscationFailed: 'Clipboard obfuscation failed',
     },
 
@@ -2279,7 +2279,7 @@ export const translations = {
     // Error Messages
     errors: {
       privatekeyIncomplete: '请输入至少 {expected} 位字符',
-      privatekeyInvalidFormat: '私钥格式无效（应为64位十六进制字符）',
+      privatekeyInvalidFormat: '私钥格式无效（应为{expected}位十六进制字符）',
       privatekeyObfuscationFailed: '剪贴板混淆失败',
     },
 
