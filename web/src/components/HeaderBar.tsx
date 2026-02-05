@@ -14,6 +14,7 @@ type Page =
   | 'strategy'
   | 'strategy-market'
   | 'debate'
+  | 'insights'
   | 'faq'
   | 'login'
   | 'register'

@@ -18,17 +18,18 @@ type Store struct {
 	driver *DBDriver // Database driver for abstraction (legacy)
 
 	// Sub-stores (lazy initialization)
-	user     *UserStore
-	aiModel  *AIModelStore
-	exchange *ExchangeStore
-	trader   *TraderStore
-	decision *DecisionStore
-	backtest *BacktestStore
-	position *PositionStore
-	strategy *StrategyStore
-	equity   *EquityStore
-	order    *OrderStore
+	user        *UserStore
+	aiModel     *AIModelStore
+	exchange    *ExchangeStore
+	trader      *TraderStore
+	decision    *DecisionStore
+	backtest    *BacktestStore
+	position    *PositionStore
+	strategy    *StrategyStore
+	equity      *EquityStore
+	order       *OrderStore
 	agentWallet *AgentWalletStore
+	insights    *InsightsStore
 
 	mu sync.RWMutex
 }
@@ -159,6 +160,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.AgentWallet().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize agent wallet tables: %w", err)
+	}
+	if err := s.Insights().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize insights tables: %w", err)
 	}
 	return nil
 }
@@ -292,6 +296,17 @@ func (s *Store) AgentWallet() *AgentWalletStore {
 		s.agentWallet = NewAgentWalletStore(s.gdb)
 	}
 	return s.agentWallet
+}
+
+// Insights gets insights storage
+func (s *Store) Insights() *InsightsStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.insights == nil {
+		s.insights = NewInsightsStore(s.gdb)
+	}
+	return s.insights
 }
 
 // Close closes database connection

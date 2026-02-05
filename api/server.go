@@ -37,6 +37,7 @@ type Server struct {
 	cryptoHandler   *CryptoHandler
 	backtestManager *backtest.Manager
 	debateHandler   *DebateHandler
+	insightsHandler *InsightsHandler
 	httpServer      *http.Server
 	port            int
 }
@@ -62,6 +63,9 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 	debateHandler := NewDebateHandler(debateStore, st.Strategy(), st.AIModel())
 	debateHandler.SetTraderManager(traderManager)
 
+	// Create insights handler
+	insightsHandler := NewInsightsHandler(st)
+
 	s := &Server{
 		router:          router,
 		traderManager:   traderManager,
@@ -69,6 +73,7 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 		cryptoHandler:   cryptoHandler,
 		backtestManager: backtestManager,
 		debateHandler:   debateHandler,
+		insightsHandler: insightsHandler,
 		port:            port,
 	}
 
@@ -130,6 +135,11 @@ func (s *Server) setupRoutes() {
 
 		// Public strategy market (no authentication required)
 		api.GET("/strategies/public", s.handlePublicStrategies)
+
+		// Market insights (no authentication required, public data)
+		api.GET("/insights/weekly", s.insightsHandler.HandleGetWeeklyInsights)
+		api.GET("/insights/daily", s.insightsHandler.HandleGetDailyInsights)
+		api.GET("/insights/watchlist", s.insightsHandler.HandleGetWatchlist)
 
 		// Authentication related routes (no authentication required)
 		api.POST("/register", s.handleRegister)

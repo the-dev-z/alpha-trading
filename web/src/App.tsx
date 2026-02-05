@@ -13,6 +13,7 @@ import { LandingPage } from './pages/LandingPage'
 import { FAQPage } from './pages/FAQPage'
 import { StrategyStudioPage } from './pages/StrategyStudioPage'
 import { DebateArenaPage } from './pages/DebateArenaPage'
+import { InsightsPage } from './pages/InsightsPage'
 import { StrategyMarketPage } from './pages/StrategyMarketPage'
 import { LoginRequiredOverlay } from './components/LoginRequiredOverlay'
 import HeaderBar from './components/HeaderBar'
@@ -42,6 +43,7 @@ type Page =
   | 'strategy'
   | 'strategy-market'
   | 'debate'
+  | 'insights'
   | 'faq'
   | 'login'
   | 'register'
@@ -69,6 +71,7 @@ function App() {
     if (path === '/strategy' || hash === 'strategy') return 'strategy'
     if (path === '/strategy-market' || hash === 'strategy-market') return 'strategy-market'
     if (path === '/debate' || hash === 'debate') return 'debate'
+    if (path === '/insights' || hash === 'insights') return 'insights'
     if (path === '/dashboard' || hash === 'trader' || hash === 'details')
       return 'trader'
     return 'competition' // 默认为竞赛页面
@@ -93,6 +96,7 @@ function App() {
       'backtest': '/backtest',
       'strategy': '/strategy',
       'debate': '/debate',
+      'insights': '/insights',
       'faq': '/faq',
       'login': '/login',
       'register': '/register',
@@ -154,6 +158,8 @@ function App() {
         setCurrentPage('strategy-market')
       } else if (path === '/debate' || hash === 'debate') {
         setCurrentPage('debate')
+      } else if (path === '/insights' || hash === 'insights') {
+        setCurrentPage('insights')
       } else if (
         path === '/dashboard' ||
         hash === 'trader' ||
@@ -425,6 +431,8 @@ function App() {
               <StrategyStudioPage />
             ) : currentPage === 'debate' ? (
               <DebateArenaPage />
+            ) : currentPage === 'insights' ? (
+              <InsightsPage />
             ) : (
               <TraderDashboardPage
                 selectedTrader={selectedTrader}

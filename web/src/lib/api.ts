@@ -30,6 +30,9 @@ import type {
   DebateVote,
   DebatePersonalityInfo,
   PositionHistoryResponse,
+  WeeklyInsightsResponse,
+  DailyInsightsResponse,
+  WatchlistResponse,
 } from '../types'
 import { CryptoService } from './crypto'
 import { httpClient } from './httpClient'
@@ -783,6 +786,28 @@ export const api = {
       `${API_BASE}/positions/history?trader_id=${traderId}&limit=${limit}`
     )
     if (!result.success) throw new Error('获取历史仓位失败')
+    return result.data!
+  },
+
+  // ============================================
+  // Market Insights APIs (Public, no auth required)
+  // ============================================
+
+  async getInsightsWeekly(): Promise<WeeklyInsightsResponse> {
+    const result = await httpClient.get<WeeklyInsightsResponse>(`${API_BASE}/insights/weekly`)
+    if (!result.success) throw new Error('获取周度市场洞察失败')
+    return result.data!
+  },
+
+  async getInsightsDaily(): Promise<DailyInsightsResponse> {
+    const result = await httpClient.get<DailyInsightsResponse>(`${API_BASE}/insights/daily`)
+    if (!result.success) throw new Error('获取日度市场洞察失败')
+    return result.data!
+  },
+
+  async getInsightsWatchlist(): Promise<WatchlistResponse> {
+    const result = await httpClient.get<WatchlistResponse>(`${API_BASE}/insights/watchlist`)
+    if (!result.success) throw new Error('获取关注列表失败')
     return result.data!
   },
 }

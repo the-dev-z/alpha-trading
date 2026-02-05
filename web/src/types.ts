@@ -750,3 +750,106 @@ export interface PositionHistoryResponse {
   symbol_stats: SymbolStats[];
   direction_stats: DirectionStats[];
 }
+
+// ============================================
+// Market Insights Types
+// ============================================
+
+export interface TokenInfo {
+  symbol: string;
+  name: string;
+  price_change: number;
+  volume: number;
+  chain: string;
+  narrative: string;
+}
+
+export interface NarrativeInfo {
+  name: string;
+  token_count: number;
+  total_volume: number;
+  volume_share: number;
+  avg_price_change: number;
+  is_emerging: boolean;
+}
+
+export interface NarrativeChange {
+  name: string;
+  today_rank: number;
+  yesterday_rank: number;
+  rank_change: number;
+  volume_change: number;
+}
+
+export interface ChainInfo {
+  name: string;
+  volume: number;
+  volume_share: number;
+  active_tokens: number;
+  new_tokens: number;
+}
+
+export interface DailySnapshotInfo {
+  date: string;
+  volume: number;
+  active_tokens: number;
+  sentiment_score: number;
+}
+
+export interface WatchlistToken {
+  symbol: string;
+  name: string;
+  chain: string;
+  consecutive_days?: number;
+  total_change?: number;
+  volume_multiple?: number;
+  current_volume: number;
+  narrative: string;
+}
+
+export interface AISummary {
+  weekly_summary: string;
+  dominant_narrative: string;
+  capital_flow: string;
+  outlook: string;
+  key_tokens: string[];
+  generated_at: string;
+}
+
+export interface WeeklyInsightsResponse {
+  total_volume: number;
+  volume_change: number;
+  avg_daily_volume: number;
+  total_new_tokens: number;
+  avg_sentiment: number;
+  sentiment_label: string;
+  top_gainers: TokenInfo[];
+  top_losers: TokenInfo[];
+  dominant_narrative: NarrativeInfo | null;
+  narrative_stats: NarrativeInfo[];
+  chain_stats: ChainInfo[];
+  daily_snapshots: DailySnapshotInfo[];
+  ai_summary?: AISummary;
+  cached_at: string;
+}
+
+export interface DailyInsightsResponse {
+  today_volume: number;
+  yesterday_volume: number;
+  volume_change: number;
+  today_sentiment: number;
+  yesterday_sentiment: number;
+  sentiment_change: number;
+  sentiment_label: string;
+  today_active_tokens: number;
+  today_new_tokens: number;
+  narrative_changes: NarrativeChange[];
+  cached_at: string;
+}
+
+export interface WatchlistResponse {
+  consecutive_gainers: WatchlistToken[];
+  volume_spikes: WatchlistToken[];
+  emerging_narratives: NarrativeInfo[];
+  cached_at: string;
+}
