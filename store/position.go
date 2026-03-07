@@ -3,11 +3,62 @@ package store
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
 )
+
+// adaptivePriceRound rounds a price based on its magnitude to preserve meaningful precision.
+// For small prices (like meme coins), it preserves more decimal places.
+// It detects the number of decimal places needed from the reference price(s).
+func adaptivePriceRound(price float64, referencePrices ...float64) float64 {
+	if price == 0 {
+		return 0
+	}
+
+	// Find the minimum magnitude among all prices (including the price itself)
+	minMagnitude := math.Abs(price)
+	for _, ref := range referencePrices {
+		if ref > 0 && ref < minMagnitude {
+			minMagnitude = ref
+		}
+	}
+
+	// Determine decimal places needed based on price magnitude
+	// For price 0.000000541, we need ~15 decimal places
+	// For price 0.0001, we need ~8 decimal places
+	// For price 1.0, we need ~4 decimal places
+	var multiplier float64
+	switch {
+	case minMagnitude < 0.000001: // Ultra small (meme coins like CHEEMS, SHIB)
+		multiplier = 1e15 // 15 decimal places
+	case minMagnitude < 0.0001: // Very small (PEPE, FLOKI)
+		multiplier = 1e12 // 12 decimal places
+	case minMagnitude < 0.01: // Small
+		multiplier = 1e10 // 10 decimal places
+	case minMagnitude < 1: // Medium
+		multiplier = 1e8 // 8 decimal places
+	default: // Large
+		multiplier = 1e6 // 6 decimal places
+	}
+
+	return math.Round(price*multiplier) / multiplier
+}
+
+// getPriceDecimalPlaces returns the number of decimal places in a price string
+func getPriceDecimalPlaces(price float64) int {
+	if price == 0 {
+		return 0
+	}
+	s := strconv.FormatFloat(price, 'f', -1, 64)
+	idx := strings.Index(s, ".")
+	if idx == -1 {
+		return 0
+	}
+	return len(s) - idx - 1
+}
 
 // TraderStats trading statistics metrics
 type TraderStats struct {
@@ -156,18 +207,22 @@ func (s *PositionStore) UpdatePositionQuantityAndPrice(id int64, addQty float64,
 	newQty := math.Round((pos.Quantity+addQty)*10000) / 10000
 	newEntryQty := math.Round((currentEntryQty+addQty)*10000) / 10000
 	newEntryPrice := (pos.EntryPrice*pos.Quantity + addPrice*addQty) / newQty
-	newEntryPrice = math.Round(newEntryPrice*100) / 100
+	// Use adaptive precision based on price magnitude (for meme coins with very small prices)
+	newEntryPrice = adaptivePriceRound(newEntryPrice, pos.EntryPrice, addPrice)
 	newFee := pos.Fee + addFee
+	nowMs := time.Now().UTC().UnixMilli()
 
 	return s.db.Model(&TraderPosition{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"quantity":       newQty,
 		"entry_quantity": newEntryQty,
 		"entry_price":    newEntryPrice,
 		"fee":            newFee,
+		"updated_at":     nowMs,
 	}).Error
 }
 
 // ReducePositionQuantity reduces position quantity for partial close
+// If quantity reaches 0 (or near 0), automatically closes the position
 func (s *PositionStore) ReducePositionQuantity(id int64, reduceQty float64, exitPrice float64, addFee float64, addPnL float64) error {
 	var pos TraderPosition
 	if err := s.db.First(&pos, id).Error; err != nil {
@@ -184,7 +239,26 @@ func (s *PositionStore) ReducePositionQuantity(id int64, reduceQty float64, exit
 	var newExitPrice float64
 	if newClosedQty > 0 {
 		newExitPrice = (pos.ExitPrice*closedQty + exitPrice*reduceQty) / newClosedQty
-		newExitPrice = math.Round(newExitPrice*100) / 100
+		// Use adaptive precision based on price magnitude (for meme coins with very small prices)
+		newExitPrice = adaptivePriceRound(newExitPrice, pos.ExitPrice, exitPrice, pos.EntryPrice)
+	}
+
+	nowMs := time.Now().UTC().UnixMilli()
+
+	// Check if position should be fully closed (quantity reduced to ~0)
+	const QUANTITY_TOLERANCE = 0.0001
+	if newQty <= QUANTITY_TOLERANCE {
+		// Auto-close: set status to CLOSED
+		return s.db.Model(&TraderPosition{}).Where("id = ?", id).Updates(map[string]interface{}{
+			"quantity":     0,
+			"fee":          newFee,
+			"exit_price":   newExitPrice,
+			"realized_pnl": newPnL,
+			"status":       "CLOSED",
+			"exit_time":    nowMs,
+			"close_reason": "sync",
+			"updated_at":   nowMs,
+		}).Error
 	}
 
 	return s.db.Model(&TraderPosition{}).Where("id = ?", id).Updates(map[string]interface{}{
@@ -192,14 +266,17 @@ func (s *PositionStore) ReducePositionQuantity(id int64, reduceQty float64, exit
 		"fee":          newFee,
 		"exit_price":   newExitPrice,
 		"realized_pnl": newPnL,
+		"updated_at":   nowMs,
 	}).Error
 }
 
 // UpdatePositionExchangeInfo updates exchange_id and exchange_type
 func (s *PositionStore) UpdatePositionExchangeInfo(id int64, exchangeID, exchangeType string) error {
+	nowMs := time.Now().UTC().UnixMilli()
 	return s.db.Model(&TraderPosition{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"exchange_id":   exchangeID,
 		"exchange_type": exchangeType,
+		"updated_at":    nowMs,
 	}).Error
 }
 

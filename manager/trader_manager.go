@@ -9,7 +9,6 @@ import (
 	"nofx/store"
 	"nofx/trader"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
@@ -293,8 +292,8 @@ func (tm *TraderManager) getConcurrentTraderData(traders []*trader.AutoTrader) [
 	// Concurrently fetch data for each trader
 	for i, t := range traders {
 		go func(index int, trader *trader.AutoTrader) {
-			// Set timeout to 3 seconds for single trader
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			// Set timeout to 10 seconds for single trader (increased from 3s for DEX reliability)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			// Use channel for timeout control
@@ -331,7 +330,7 @@ func (tm *TraderManager) getConcurrentTraderData(traders []*trader.AutoTrader) [
 				}
 			case err := <-errorChan:
 				// Failed to get account info
-				logger.Infof("⚠️ Failed to get account info for trader %s: %v", trader.GetID(), err)
+				logger.Infof("⚠️ Failed to get account info for trader %s (%s/%s): %v", trader.GetName(), trader.GetID(), trader.GetExchange(), err)
 				traderData = map[string]interface{}{
 					"trader_id":              trader.GetID(),
 					"trader_name":            trader.GetName(),
@@ -348,7 +347,7 @@ func (tm *TraderManager) getConcurrentTraderData(traders []*trader.AutoTrader) [
 				}
 			case <-ctx.Done():
 				// Timeout
-				logger.Infof("⏰ Timeout getting account info for trader %s", trader.GetID())
+				logger.Infof("⏰ Timeout (10s) getting account info for trader %s (%s/%s)", trader.GetName(), trader.GetID(), trader.GetExchange())
 				traderData = map[string]interface{}{
 					"trader_id":              trader.GetID(),
 					"trader_name":            trader.GetName(),
@@ -407,7 +406,6 @@ func (tm *TraderManager) GetTopTradersData() (map[string]interface{}, error) {
 
 	return result, nil
 }
-
 
 // RemoveTrader removes a trader from memory (does not affect database)
 // Used to force reload when updating trader configuration
@@ -665,11 +663,11 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		QwenKey:               "",
 		CustomAPIURL:          aiModelCfg.CustomAPIURL,
 		CustomModelName:       aiModelCfg.CustomModelName,
-		ScanInterval:         time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
-		InitialBalance:       traderCfg.InitialBalance,
-		IsCrossMargin:        traderCfg.IsCrossMargin,
-		ShowInCompetition:    traderCfg.ShowInCompetition,
-		StrategyConfig:       strategyConfig,
+		ScanInterval:          time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
+		InitialBalance:        traderCfg.InitialBalance,
+		IsCrossMargin:         traderCfg.IsCrossMargin,
+		ShowInCompetition:     traderCfg.ShowInCompetition,
+		StrategyConfig:        strategyConfig,
 	}
 
 	logger.Infof("📊 Loading trader %s: ScanIntervalMinutes=%d (from DB), ScanInterval=%v",
@@ -691,27 +689,17 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		traderConfig.BitgetAPIKey = string(exchangeCfg.APIKey)
 		traderConfig.BitgetSecretKey = string(exchangeCfg.SecretKey)
 		traderConfig.BitgetPassphrase = string(exchangeCfg.Passphrase)
+	case "gate":
+		traderConfig.GateAPIKey = string(exchangeCfg.APIKey)
+		traderConfig.GateSecretKey = string(exchangeCfg.SecretKey)
+	case "kucoin":
+		traderConfig.KuCoinAPIKey = string(exchangeCfg.APIKey)
+		traderConfig.KuCoinSecretKey = string(exchangeCfg.SecretKey)
+		traderConfig.KuCoinPassphrase = string(exchangeCfg.Passphrase)
 	case "hyperliquid":
-		privateKey := strings.TrimSpace(string(exchangeCfg.APIKey))
-		useAgentWallet := false
-		builderAddress := ""
-		builderFeeRate := 0
-		if privateKey == "" && exchangeCfg.HyperliquidWalletAddr != "" {
-			agentWallet, err := st.AgentWallet().GetActiveByMainWallet(traderCfg.UserID, exchangeCfg.HyperliquidWalletAddr)
-			if err == nil && agentWallet != nil {
-				privateKey = strings.TrimSpace(string(agentWallet.EncryptedPrivateKey))
-				useAgentWallet = true
-				if agentWallet.BuilderFeeAuthorized && agentWallet.BuilderFeeMaxRate > 0 {
-					builderAddress = strings.TrimSpace(agentWallet.BuilderAddress)
-					builderFeeRate = agentWallet.BuilderFeeMaxRate
-				}
-			}
-		}
-		traderConfig.HyperliquidPrivateKey = privateKey
+		traderConfig.HyperliquidPrivateKey = string(exchangeCfg.APIKey)
 		traderConfig.HyperliquidWalletAddr = exchangeCfg.HyperliquidWalletAddr
-		traderConfig.HyperliquidBuilderAddress = builderAddress
-		traderConfig.HyperliquidBuilderFeeRate = builderFeeRate
-		traderConfig.HyperliquidBuilderOverride = useAgentWallet
+		traderConfig.HyperliquidUnifiedAcct = exchangeCfg.HyperliquidUnifiedAcct
 	case "aster":
 		traderConfig.AsterUser = exchangeCfg.AsterUser
 		traderConfig.AsterSigner = exchangeCfg.AsterSigner
@@ -722,6 +710,9 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		traderConfig.LighterAPIKeyPrivateKey = string(exchangeCfg.LighterAPIKeyPrivateKey)
 		traderConfig.LighterAPIKeyIndex = exchangeCfg.LighterAPIKeyIndex
 		traderConfig.LighterTestnet = exchangeCfg.Testnet
+	case "indodax":
+		traderConfig.IndodaxAPIKey = string(exchangeCfg.APIKey)
+		traderConfig.IndodaxSecretKey = string(exchangeCfg.SecretKey)
 	}
 
 	// Set API keys based on AI model (convert EncryptedString to string)

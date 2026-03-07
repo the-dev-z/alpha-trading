@@ -31,7 +31,7 @@ var (
 // Note: Kline data now uses free/open API (coinank_api.Kline) which doesn't require authentication
 
 // getKlinesFromCoinAnk fetches kline data from CoinAnk API (replacement for WSMonitorCli)
-func getKlinesFromCoinAnk(symbol, interval string, limit int) ([]Kline, error) {
+func getKlinesFromCoinAnk(symbol, interval, exchange string, limit int) ([]Kline, error) {
 	// Map interval string to coinank enum
 	var coinankInterval coinank_enum.Interval
 	switch interval {
@@ -67,13 +67,44 @@ func getKlinesFromCoinAnk(symbol, interval string, limit int) ([]Kline, error) {
 		return nil, fmt.Errorf("unsupported interval: %s", interval)
 	}
 
+	// Map exchange string to coinank enum
+	var coinankExchange coinank_enum.Exchange
+	switch strings.ToLower(exchange) {
+	case "binance":
+		coinankExchange = coinank_enum.Binance
+	case "bybit":
+		coinankExchange = coinank_enum.Bybit
+	case "okx":
+		coinankExchange = coinank_enum.Okex
+	case "bitget":
+		coinankExchange = coinank_enum.Bitget
+	case "gate":
+		coinankExchange = coinank_enum.Gate
+	case "hyperliquid":
+		coinankExchange = coinank_enum.Hyperliquid
+	case "aster":
+		coinankExchange = coinank_enum.Aster
+	default:
+		// Default to Binance for unknown exchanges
+		coinankExchange = coinank_enum.Binance
+	}
+
 	// Call CoinAnk free/open API (no authentication required)
 	ctx := context.Background()
 	ts := time.Now().UnixMilli()
 	// Use "To" side to search backward from current time (get historical klines)
-	coinankKlines, err := coinank_api.Kline(ctx, symbol, coinank_enum.Binance, ts, coinank_enum.To, limit, coinankInterval)
+	coinankKlines, err := coinank_api.Kline(ctx, symbol, coinankExchange, ts, coinank_enum.To, limit, coinankInterval)
 	if err != nil {
-		return nil, fmt.Errorf("CoinAnk API error: %w", err)
+		// If exchange-specific data fails, fallback to Binance
+		if coinankExchange != coinank_enum.Binance {
+			logger.Warnf("⚠️ CoinAnk %s data failed, falling back to Binance: %v", exchange, err)
+			coinankKlines, err = coinank_api.Kline(ctx, symbol, coinank_enum.Binance, ts, coinank_enum.To, limit, coinankInterval)
+			if err != nil {
+				return nil, fmt.Errorf("CoinAnk API error (fallback): %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("CoinAnk API error: %w", err)
+		}
 	}
 
 	// Convert coinank kline format to market.Kline format
@@ -134,8 +165,13 @@ func getKlinesFromHyperliquid(symbol, interval string, limit int) ([]Kline, erro
 	return klines, nil
 }
 
-// Get retrieves market data for the specified token
+// Get retrieves market data for the specified token (uses Binance data by default)
 func Get(symbol string) (*Data, error) {
+	return GetWithExchange(symbol, "binance")
+}
+
+// GetWithExchange retrieves market data for the specified token using exchange-specific data
+func GetWithExchange(symbol, exchange string) (*Data, error) {
 	var klines3m, klines4h []Kline
 	var err error
 	// Normalize symbol
@@ -144,18 +180,21 @@ func Get(symbol string) (*Data, error) {
 	// Check if this is an xyz dex asset (use Hyperliquid API)
 	isXyzAsset := IsXyzDexAsset(symbol)
 
+	// For hyperliquid exchange, also use Hyperliquid API
+	useHyperliquidAPI := isXyzAsset || strings.ToLower(exchange) == "hyperliquid"
+
 	// Get 3-minute K-line data (or 5-minute for xyz assets as 3m may not be available)
-	if isXyzAsset {
+	if useHyperliquidAPI {
 		// Use Hyperliquid API for xyz dex assets (use 5m since 3m may not be available)
 		klines3m, err = getKlinesFromHyperliquid(symbol, "5m", 100)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get 5-minute K-line from Hyperliquid: %v", err)
 		}
 	} else {
-		// Use CoinAnk for regular crypto assets
-		klines3m, err = getKlinesFromCoinAnk(symbol, "3m", 100)
+		// Use CoinAnk for regular crypto assets with exchange-specific data
+		klines3m, err = getKlinesFromCoinAnk(symbol, "3m", exchange, 100)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get 3-minute K-line from CoinAnk: %v", err)
+			return nil, fmt.Errorf("Failed to get 3-minute K-line from CoinAnk (%s): %v", exchange, err)
 		}
 	}
 
@@ -166,15 +205,15 @@ func Get(symbol string) (*Data, error) {
 	}
 
 	// Get 4-hour K-line data
-	if isXyzAsset {
+	if useHyperliquidAPI {
 		klines4h, err = getKlinesFromHyperliquid(symbol, "4h", 100)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get 4-hour K-line from Hyperliquid: %v", err)
 		}
 	} else {
-		klines4h, err = getKlinesFromCoinAnk(symbol, "4h", 100)
+		klines4h, err = getKlinesFromCoinAnk(symbol, "4h", exchange, 100)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get 4-hour K-line from CoinAnk: %v", err)
+			return nil, fmt.Errorf("Failed to get 4-hour K-line from CoinAnk (%s): %v", exchange, err)
 		}
 	}
 
@@ -290,8 +329,8 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 				continue
 			}
 		} else {
-			// Use CoinAnk for regular crypto assets
-			klines, err = getKlinesFromCoinAnk(symbol, tf, 200)
+			// Use CoinAnk for regular crypto assets (default to Binance)
+			klines, err = getKlinesFromCoinAnk(symbol, tf, "binance", 200)
 			if err != nil {
 				logger.Infof("⚠️ Failed to get %s %s K-line from CoinAnk: %v", symbol, tf, err)
 				continue
@@ -1068,6 +1107,11 @@ func Normalize(symbol string) string {
 		return "xyz:" + base
 	}
 
+	// Remove exchange-specific separators (Gate uses BTC_USDT, OKX uses BTC-USDT-SWAP)
+	symbol = strings.ReplaceAll(symbol, "_", "")
+	symbol = strings.ReplaceAll(symbol, "-SWAP", "")
+	symbol = strings.ReplaceAll(symbol, "-", "")
+
 	// For regular crypto assets
 	if strings.HasSuffix(symbol, "USDT") {
 		return symbol
@@ -1209,4 +1253,92 @@ func ExportCalculateATR(klines []Kline, period int) float64 {
 // ExportCalculateBOLL exports calculateBOLL for testing
 func ExportCalculateBOLL(klines []Kline, period int, multiplier float64) (upper, middle, lower float64) {
 	return calculateBOLL(klines, period, multiplier)
+}
+
+// calculateDonchian calculates Donchian channel (highest high, lowest low) for given period
+func calculateDonchian(klines []Kline, period int) (upper, lower float64) {
+	if len(klines) == 0 || period <= 0 {
+		return 0, 0
+	}
+
+	// Use all available klines if period > len(klines)
+	start := len(klines) - period
+	if start < 0 {
+		start = 0
+	}
+
+	upper = klines[start].High
+	lower = klines[start].Low
+
+	for i := start + 1; i < len(klines); i++ {
+		if klines[i].High > upper {
+			upper = klines[i].High
+		}
+		if klines[i].Low < lower {
+			lower = klines[i].Low
+		}
+	}
+
+	return upper, lower
+}
+
+// ExportCalculateDonchian exports calculateDonchian for testing
+func ExportCalculateDonchian(klines []Kline, period int) (float64, float64) {
+	return calculateDonchian(klines, period)
+}
+
+// Box period constants (in 1h candles)
+const (
+	ShortBoxPeriod = 72  // 3 days of 1h candles
+	MidBoxPeriod   = 240 // 10 days of 1h candles
+	LongBoxPeriod  = 500 // ~21 days of 1h candles
+)
+
+// calculateBoxData calculates multi-period box data from klines
+func calculateBoxData(klines []Kline, currentPrice float64) *BoxData {
+	box := &BoxData{
+		CurrentPrice: currentPrice,
+	}
+
+	if len(klines) == 0 {
+		return box
+	}
+
+	box.ShortUpper, box.ShortLower = calculateDonchian(klines, ShortBoxPeriod)
+	box.MidUpper, box.MidLower = calculateDonchian(klines, MidBoxPeriod)
+	box.LongUpper, box.LongLower = calculateDonchian(klines, LongBoxPeriod)
+
+	return box
+}
+
+// ExportCalculateBoxData exports calculateBoxData for testing
+func ExportCalculateBoxData(klines []Kline, currentPrice float64) *BoxData {
+	return calculateBoxData(klines, currentPrice)
+}
+
+// GetBoxData fetches 1h klines and calculates box data for a symbol
+func GetBoxData(symbol string) (*BoxData, error) {
+	symbol = Normalize(symbol)
+
+	// Fetch 500 1h klines
+	var klines []Kline
+	var err error
+
+	if IsXyzDexAsset(symbol) {
+		klines, err = getKlinesFromHyperliquid(symbol, "1h", LongBoxPeriod)
+	} else {
+		klines, err = getKlinesFromCoinAnk(symbol, "1h", "binance", LongBoxPeriod)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 1h klines: %w", err)
+	}
+
+	if len(klines) == 0 {
+		return nil, fmt.Errorf("no kline data available")
+	}
+
+	currentPrice := klines[len(klines)-1].Close
+
+	return calculateBoxData(klines, currentPrice), nil
 }

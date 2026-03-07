@@ -11,6 +11,8 @@ export interface SystemStatus {
   stop_until: string
   last_reset_time: string
   ai_provider: string
+  strategy_type?: 'ai_trading' | 'grid_trading'
+  grid_symbol?: string
 }
 
 export interface AccountInfo {
@@ -462,6 +464,8 @@ export interface PromptSectionsConfig {
 }
 
 export interface StrategyConfig {
+  // Strategy type: "ai_trading" (default) or "grid_trading"
+  strategy_type?: 'ai_trading' | 'grid_trading';
   // Language setting: "zh" for Chinese, "en" for English
   // Determines the language used for data formatting and prompt generation
   language?: 'zh' | 'en';
@@ -470,16 +474,54 @@ export interface StrategyConfig {
   custom_prompt?: string;
   risk_control: RiskControlConfig;
   prompt_sections?: PromptSectionsConfig;
+  // Grid trading configuration (only used when strategy_type is 'grid_trading')
+  grid_config?: GridStrategyConfig;
+}
+
+// Grid trading specific configuration
+export interface GridStrategyConfig {
+  // Trading pair (e.g., "BTCUSDT")
+  symbol: string;
+  // Number of grid levels (5-50)
+  grid_count: number;
+  // Total investment in USDT
+  total_investment: number;
+  // Leverage (1-20)
+  leverage: number;
+  // Upper price boundary (0 = auto-calculate from ATR)
+  upper_price: number;
+  // Lower price boundary (0 = auto-calculate from ATR)
+  lower_price: number;
+  // Use ATR to auto-calculate bounds
+  use_atr_bounds: boolean;
+  // ATR multiplier for bound calculation (default 2.0)
+  atr_multiplier: number;
+  // Position distribution: "uniform" | "gaussian" | "pyramid"
+  distribution: 'uniform' | 'gaussian' | 'pyramid';
+  // Maximum drawdown percentage before emergency exit
+  max_drawdown_pct: number;
+  // Stop loss percentage per position
+  stop_loss_pct: number;
+  // Daily loss limit percentage
+  daily_loss_limit_pct: number;
+  // Use maker-only orders for lower fees
+  use_maker_only: boolean;
+  // Enable automatic grid direction adjustment based on box breakouts
+  enable_direction_adjust?: boolean;
+  // Direction bias ratio for long_bias/short_bias modes (default 0.7 = 70%/30%)
+  direction_bias_ratio?: number;
 }
 
 export interface CoinSourceConfig {
-  source_type: 'static' | 'ai500' | 'oi_top' | 'mixed';
+  source_type: 'static' | 'ai500' | 'oi_top' | 'oi_low' | 'mixed';
   static_coins?: string[];
   excluded_coins?: string[];   // 排除的币种列表
   use_ai500: boolean;
   ai500_limit?: number;
   use_oi_top: boolean;
   oi_top_limit?: number;
+  use_oi_low: boolean;
+  oi_low_limit?: number;
   // Note: API URLs are now built automatically using nofxos_api_key from IndicatorConfig
 }
 
@@ -852,4 +894,37 @@ export interface WatchlistResponse {
   volume_spikes: WatchlistToken[];
   emerging_narratives: NarrativeInfo[];
   cached_at: string;
+}
+
+// Grid Risk Information for frontend display
+export interface GridRiskInfo {
+  // Leverage info
+  current_leverage: number
+  effective_leverage: number
+  recommended_leverage: number
+
+  // Position info
+  current_position: number
+  max_position: number
+  position_percent: number
+
+  // Liquidation info
+  liquidation_price: number
+  liquidation_distance: number
+
+  // Market state
+  regime_level: string
+
+  // Box state
+  short_box_upper: number
+  short_box_lower: number
+  mid_box_upper: number
+  mid_box_lower: number
+  long_box_upper: number
+  long_box_lower: number
+  current_price: number
+
+  // Breakout state
+  breakout_level: string
+  breakout_direction: string
 }

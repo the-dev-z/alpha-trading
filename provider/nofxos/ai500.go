@@ -73,8 +73,10 @@ func (c *Client) fetchAI500() ([]CoinData, error) {
 		return nil, fmt.Errorf("API returned failure status")
 	}
 
+	// 空列表是正常情况，不是错误
 	if len(response.Data.Coins) == 0 {
-		return nil, fmt.Errorf("coin list is empty")
+		log.Printf("ℹ️  AI500 returned empty coin list (no coins meet criteria currently)")
+		return []CoinData{}, nil
 	}
 
 	// Set IsAvailable flag
@@ -103,7 +105,8 @@ func (c *Client) GetTopRatedCoins(limit int) ([]string, error) {
 	}
 
 	if len(availableCoins) == 0 {
-		return nil, fmt.Errorf("no available coins")
+		// Empty list is normal - just return empty slice, not an error
+		return []string{}, nil
 	}
 
 	// Sort by Score descending (bubble sort)
@@ -145,10 +148,7 @@ func (c *Client) GetAvailableCoins() ([]string, error) {
 		}
 	}
 
-	if len(symbols) == 0 {
-		return nil, fmt.Errorf("no available coins")
-	}
-
+	// Empty list is normal - just return empty slice, not an error
 	return symbols, nil
 }
 

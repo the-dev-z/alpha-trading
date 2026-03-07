@@ -106,16 +106,41 @@ func (c *Client) fetchOIRanking(rankType, duration string, limit int) ([]OIPosit
 
 // GetOITopPositions retrieves top OI increase positions (legacy compatibility)
 func (c *Client) GetOITopPositions() ([]OIPosition, error) {
-	data, err := c.GetOIRanking("1h", 20)
+	positions, _, err := c.fetchOIRanking("top", "1h", 20)
 	if err != nil {
 		return nil, err
 	}
-	return data.TopPositions, nil
+	return positions, nil
 }
 
 // GetOITopSymbols retrieves OI top coin symbol list
 func (c *Client) GetOITopSymbols() ([]string, error) {
 	positions, err := c.GetOITopPositions()
+	if err != nil {
+		return nil, err
+	}
+
+	var symbols []string
+	for _, pos := range positions {
+		symbol := NormalizeSymbol(pos.Symbol)
+		symbols = append(symbols, symbol)
+	}
+
+	return symbols, nil
+}
+
+// GetOILowPositions retrieves OI decrease positions (for short opportunities)
+func (c *Client) GetOILowPositions() ([]OIPosition, error) {
+	positions, _, err := c.fetchOIRanking("low", "1h", 20)
+	if err != nil {
+		return nil, err
+	}
+	return positions, nil
+}
+
+// GetOILowSymbols retrieves OI low coin symbol list
+func (c *Client) GetOILowSymbols() ([]string, error) {
+	positions, err := c.GetOILowPositions()
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -732,4 +733,18 @@ func AsterAutoCreateBrokerApiKey(token, apiWalletAddr, apiWalletPrivKey string, 
 	logger.Infof("  └─ API Key: %s", createData.Data.APIKey)
 
 	return createData.Data.APIKey, secretKey, nil
+}
+
+func getEnvInt(key string, defaultVal int) int {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return defaultVal
+	}
+
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return defaultVal
+	}
+
+	return parsed
 }

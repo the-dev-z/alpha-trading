@@ -32,6 +32,9 @@ func (Strategy) TableName() string { return "strategies" }
 
 // StrategyConfig strategy configuration details (JSON structure)
 type StrategyConfig struct {
+	// Strategy type: "ai_trading" (default) or "grid_trading"
+	StrategyType string `json:"strategy_type,omitempty"`
+
 	// language setting: "zh" for Chinese, "en" for English
 	// This determines the language used for data formatting and prompt generation
 	Language string `json:"language,omitempty"`
@@ -45,6 +48,43 @@ type StrategyConfig struct {
 	RiskControl RiskControlConfig `json:"risk_control"`
 	// editable sections of System Prompt
 	PromptSections PromptSectionsConfig `json:"prompt_sections,omitempty"`
+
+	// Grid trading configuration (only used when StrategyType == "grid_trading")
+	GridConfig *GridStrategyConfig `json:"grid_config,omitempty"`
+}
+
+// GridStrategyConfig grid trading specific configuration
+type GridStrategyConfig struct {
+	// Trading pair (e.g., "BTCUSDT")
+	Symbol string `json:"symbol"`
+	// Number of grid levels (5-50)
+	GridCount int `json:"grid_count"`
+	// Total investment in USDT
+	TotalInvestment float64 `json:"total_investment"`
+	// Leverage (1-20)
+	Leverage int `json:"leverage"`
+	// Upper price boundary (0 = auto-calculate from ATR)
+	UpperPrice float64 `json:"upper_price"`
+	// Lower price boundary (0 = auto-calculate from ATR)
+	LowerPrice float64 `json:"lower_price"`
+	// Use ATR to auto-calculate bounds
+	UseATRBounds bool `json:"use_atr_bounds"`
+	// ATR multiplier for bound calculation (default 2.0)
+	ATRMultiplier float64 `json:"atr_multiplier"`
+	// Position distribution: "uniform" | "gaussian" | "pyramid"
+	Distribution string `json:"distribution"`
+	// Maximum drawdown percentage before emergency exit
+	MaxDrawdownPct float64 `json:"max_drawdown_pct"`
+	// Stop loss percentage per position
+	StopLossPct float64 `json:"stop_loss_pct"`
+	// Daily loss limit percentage
+	DailyLossLimitPct float64 `json:"daily_loss_limit_pct"`
+	// Use maker-only orders for lower fees
+	UseMakerOnly bool `json:"use_maker_only"`
+	// Enable automatic grid direction adjustment based on box breakouts
+	EnableDirectionAdjust bool `json:"enable_direction_adjust"`
+	// Direction bias ratio for long_bias/short_bias modes (default 0.7 = 70%/30%)
+	DirectionBiasRatio float64 `json:"direction_bias_ratio"`
 }
 
 // PromptSectionsConfig editable sections of System Prompt
@@ -61,7 +101,7 @@ type PromptSectionsConfig struct {
 
 // CoinSourceConfig coin source configuration
 type CoinSourceConfig struct {
-	// source type: "static" | "ai500" | "oi_top" | "mixed"
+	// source type: "static" | "ai500" | "oi_top" | "oi_low" | "mixed"
 	SourceType string `json:"source_type"`
 	// static coin list (used when source_type = "static")
 	StaticCoins []string `json:"static_coins,omitempty"`
@@ -71,10 +111,20 @@ type CoinSourceConfig struct {
 	UseAI500 bool `json:"use_ai500"`
 	// AI500 coin pool maximum count
 	AI500Limit int `json:"ai500_limit,omitempty"`
-	// whether to use OI Top
+	// whether to use OI Top (持仓增加榜，适合做多)
 	UseOITop bool `json:"use_oi_top"`
 	// OI Top maximum count
 	OITopLimit int `json:"oi_top_limit,omitempty"`
+	// whether to use OI Low (持仓减少榜，适合做空)
+	UseOILow bool `json:"use_oi_low"`
+	// OI Low maximum count
+	OILowLimit int `json:"oi_low_limit,omitempty"`
+	// whether to use Hyperliquid All coins (all available perp pairs)
+	UseHyperAll bool `json:"use_hyper_all"`
+	// whether to use Hyperliquid Main coins (top N by 24h volume)
+	UseHyperMain bool `json:"use_hyper_main"`
+	// Hyperliquid Main maximum count (default 20)
+	HyperMainLimit int `json:"hyper_main_limit,omitempty"`
 	// Note: API URLs are now built automatically using NofxOSAPIKey from IndicatorConfig
 }
 
@@ -212,7 +262,9 @@ func GetDefaultStrategyConfig(lang string) StrategyConfig {
 			UseAI500:   true,
 			AI500Limit: 10,
 			UseOITop:   false,
-			OITopLimit: 20,
+			OITopLimit: 10,
+			UseOILow:   false,
+			OILowLimit: 10,
 		},
 		Indicators: IndicatorConfig{
 			Klines: KlineConfig{

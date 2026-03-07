@@ -1,9 +1,21 @@
-# NOFX - Agentic Trading OS
+<h1 align="center">NOFX — Open Source AI Trading OS</h1>
 
-[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org/)
-[![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
+<p align="center">
+  <strong>The infrastructure layer for AI-powered financial trading.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/NoFxAiOS/nofx/stargazers"><img src="https://img.shields.io/github/stars/NoFxAiOS/nofx?style=for-the-badge" alt="Stars"></a>
+  <a href="https://github.com/NoFxAiOS/nofx/releases"><img src="https://img.shields.io/github/v/release/NoFxAiOS/nofx?style=for-the-badge" alt="Release"></a>
+  <a href="https://github.com/NoFxAiOS/nofx/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=for-the-badge" alt="License"></a>
+  <a href="https://t.me/nofx_dev_community"><img src="https://img.shields.io/badge/Telegram-Community-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
+</p>
+
+<p align="center">
+  <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go"></a>
+  <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react" alt="React"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript" alt="TypeScript"></a>
+</p>
 
 | CONTRIBUTOR AIRDROP PROGRAM |
 |:----------------------------------:|
@@ -13,10 +25,6 @@
 **Languages:** [English](README.md) | [中文](docs/i18n/zh-CN/README.md) | [日本語](docs/i18n/ja/README.md) | [한국어](docs/i18n/ko/README.md) | [Русский](docs/i18n/ru/README.md) | [Українська](docs/i18n/uk/README.md) | [Tiếng Việt](docs/i18n/vi/README.md)
 
 ---
-
-## AI-Powered Multi-Asset Trading Platform
-
-**NOFX** is an open-source AI trading system that lets you run multiple AI models to trade automatically. Configure strategies through a web interface, monitor performance in real-time, and let AI agents compete to find the best trading approach.
 
 ### Supported Markets
 
@@ -30,7 +38,7 @@
 ### Core Features
 
 - **Multi-AI Support**: Run DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi - switch models anytime
-- **Multi-Exchange**: Trade on Binance, Bybit, OKX, Bitget, Hyperliquid, Aster DEX, Lighter from one platform
+- **Multi-Exchange**: Trade on Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster DEX, Lighter from one platform
 - **Strategy Studio**: Visual strategy builder with coin sources, indicators, and risk controls
 - **AI Debate Arena**: Multiple AI models debate trading decisions with different roles (Bull, Bear, Analyst)
 - **AI Competition Mode**: Multiple AI traders compete in real-time, track performance side by side
@@ -41,6 +49,12 @@
 
 - **Tinkle** - [@Web3Tinkle](https://x.com/Web3Tinkle)
 - **Official Twitter** - [@nofx_official](https://x.com/nofx_official)
+
+### Official Links
+
+- **Official Website**: [https://nofxai.com](https://nofxai.com)
+- **Data Dashboard**: [https://nofxos.ai/dashboard](https://nofxos.ai/dashboard)
+- **API Documentation**: [https://nofxos.ai/api-docs](https://nofxos.ai/api-docs)
 
 > **Risk Warning**: This system is experimental. AI auto-trading carries significant risks. Strongly recommended for learning/research purposes or testing with small amounts only!
 
@@ -64,33 +78,35 @@ To use NOFX, you'll need:
 ### CEX (Centralized Exchanges)
 
 | Exchange | Status | Register (Fee Discount) |
-|----------|--------|-------------------------|
-| **Binance** | ✅ Supported | [Register](https://www.binance.com/join?ref=NOFXENG) |
-| **Bybit** | ✅ Supported | [Register](https://partner.bybit.com/b/83856) |
-| **OKX** | ✅ Supported | [Register](https://www.okx.com/join/1865360) |
-| **Bitget** | ✅ Supported | [Register](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
+|:---------|:------:|:------------------------|
+| <img src="web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [Register](https://www.binance.com/join?ref=NOFXENG) |
+| <img src="web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [Register](https://partner.bybit.com/b/83856) |
+| <img src="web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [Register](https://www.okx.com/join/1865360) |
+| <img src="web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [Register](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
+| <img src="web/public/exchange-icons/kucoin.svg" width="20" height="20" style="vertical-align: middle;"/> **KuCoin** | ✅ | [Register](https://www.kucoin.com/r/broker/CXEV7XKK) |
+| <img src="web/public/exchange-icons/gate.svg" width="20" height="20" style="vertical-align: middle;"/> **Gate** | ✅ | [Register](https://www.gatenode.xyz/share/VQBGUAxY) |
 
 ### Perp-DEX (Decentralized Perpetual Exchanges)
 
 | Exchange | Status | Register (Fee Discount) |
-|----------|--------|-------------------------|
-| **Hyperliquid** | ✅ Supported | [Register](https://app.hyperliquid.xyz/join/AITRADING) |
-| **Aster DEX** | ✅ Supported | [Register](https://www.asterdex.com/en/referral/fdfc0e) |
-| **Lighter** | ✅ Supported | [Register](https://app.lighter.xyz/?referral=68151432) |
+|:---------|:------:|:------------------------|
+| <img src="web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [Register](https://app.hyperliquid.xyz/join/AITRADING) |
+| <img src="web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [Register](https://www.asterdex.com/en/referral/fdfc0e) |
+| <img src="web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [Register](https://app.lighter.xyz/?referral=68151432) |
 
 ---
 
 ## Supported AI Models
 
 | AI Model | Status | Get API Key |
-|----------|--------|-------------|
-| **DeepSeek** | ✅ Supported | [Get API Key](https://platform.deepseek.com) |
-| **Qwen** | ✅ Supported | [Get API Key](https://dashscope.console.aliyun.com) |
-| **OpenAI (GPT)** | ✅ Supported | [Get API Key](https://platform.openai.com) |
-| **Claude** | ✅ Supported | [Get API Key](https://console.anthropic.com) |
-| **Gemini** | ✅ Supported | [Get API Key](https://aistudio.google.com) |
-| **Grok** | ✅ Supported | [Get API Key](https://console.x.ai) |
-| **Kimi** | ✅ Supported | [Get API Key](https://platform.moonshot.cn) |
+|:---------|:------:|:------------|
+| <img src="web/public/icons/deepseek.svg" width="20" height="20" style="vertical-align: middle;"/> **DeepSeek** | ✅ | [Get API Key](https://platform.deepseek.com) |
+| <img src="web/public/icons/qwen.svg" width="20" height="20" style="vertical-align: middle;"/> **Qwen** | ✅ | [Get API Key](https://dashscope.console.aliyun.com) |
+| <img src="web/public/icons/openai.svg" width="20" height="20" style="vertical-align: middle;"/> **OpenAI (GPT)** | ✅ | [Get API Key](https://platform.openai.com) |
+| <img src="web/public/icons/claude.svg" width="20" height="20" style="vertical-align: middle;"/> **Claude** | ✅ | [Get API Key](https://console.anthropic.com) |
+| <img src="web/public/icons/gemini.svg" width="20" height="20" style="vertical-align: middle;"/> **Gemini** | ✅ | [Get API Key](https://aistudio.google.com) |
+| <img src="web/public/icons/grok.svg" width="20" height="20" style="vertical-align: middle;"/> **Grok** | ✅ | [Get API Key](https://console.x.ai) |
+| <img src="web/public/icons/kimi.svg" width="20" height="20" style="vertical-align: middle;"/> **Kimi** | ✅ | [Get API Key](https://platform.moonshot.cn) |
 
 ---
 
@@ -479,6 +495,26 @@ All contributions are tracked on GitHub. When NOFX generates revenue, contributo
 
 - **GitHub Issues**: [Submit an Issue](https://github.com/NoFxAiOS/nofx/issues)
 - **Developer Community**: [Telegram Group](https://t.me/nofx_dev_community)
+
+---
+
+## Sponsors
+
+Thanks to all our sponsors!
+
+<a href="https://github.com/pjl914335852-ux"><img src="https://github.com/pjl914335852-ux.png" width="60" height="60" style="border-radius:50%" alt="pjl914335852-ux" /></a>
+<a href="https://github.com/cat9999aaa"><img src="https://github.com/cat9999aaa.png" width="60" height="60" style="border-radius:50%" alt="cat9999aaa" /></a>
+<a href="https://github.com/1733055465"><img src="https://github.com/1733055465.png" width="60" height="60" style="border-radius:50%" alt="1733055465" /></a>
+<a href="https://github.com/kolal2020"><img src="https://github.com/kolal2020.png" width="60" height="60" style="border-radius:50%" alt="kolal2020" /></a>
+<a href="https://github.com/CyberFFarm"><img src="https://github.com/CyberFFarm.png" width="60" height="60" style="border-radius:50%" alt="CyberFFarm" /></a>
+<a href="https://github.com/vip3001003"><img src="https://github.com/vip3001003.png" width="60" height="60" style="border-radius:50%" alt="vip3001003" /></a>
+<a href="https://github.com/mrtluh"><img src="https://github.com/mrtluh.png" width="60" height="60" style="border-radius:50%" alt="mrtluh" /></a>
+<a href="https://github.com/cpcp1117-source"><img src="https://github.com/cpcp1117-source.png" width="60" height="60" style="border-radius:50%" alt="cpcp1117-source" /></a>
+<a href="https://github.com/match-007"><img src="https://github.com/match-007.png" width="60" height="60" style="border-radius:50%" alt="match-007" /></a>
+<a href="https://github.com/leiwuhen1715"><img src="https://github.com/leiwuhen1715.png" width="60" height="60" style="border-radius:50%" alt="leiwuhen1715" /></a>
+<a href="https://github.com/SHAOXIA1991"><img src="https://github.com/SHAOXIA1991.png" width="60" height="60" style="border-radius:50%" alt="SHAOXIA1991" /></a>
+
+[Become a sponsor](https://github.com/sponsors/NoFxAiOS)
 
 ---
 
